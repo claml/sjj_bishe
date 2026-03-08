@@ -61,7 +61,12 @@ const router = useRouter();
  * 提交表单
  */
 const handleSubmit = async () => {
-  if (!form.userAccount || !form.userName || !form.userPassword || !form.checkPassword) {
+  if (
+    !form.userAccount ||
+    !form.userName ||
+    !form.userPassword ||
+    !form.checkPassword
+  ) {
     message.error("请填写完整信息");
     return;
   }

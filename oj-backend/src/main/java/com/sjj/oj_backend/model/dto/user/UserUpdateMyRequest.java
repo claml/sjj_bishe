@@ -13,6 +13,11 @@ import lombok.Data;
 public class UserUpdateMyRequest implements Serializable {
 
     /**
+     * 用户密码
+     */
+    private String userPassword;
+
+    /**
      * 用户昵称
      */
     private String userName;

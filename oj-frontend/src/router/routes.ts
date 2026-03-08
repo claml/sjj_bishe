@@ -11,6 +11,7 @@ import ManageQuestionView from "@/views/question/ManageQuestionView.vue";
 import QuestionsView from "@/views/question/QuestionsView.vue";
 import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import UpdateQuestionView from "@/views/question/UpdateQuestionView.vue";
+import UserAccountView from "@/views/user/UserAccountView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -68,6 +69,14 @@ export const routes: Array<RouteRecordRaw> = [
     meta: {
       access: ACCESS_ENUM.USER,
       hideInMenu: true,
+    },
+  },
+  {
+    path: "/user/account",
+    name: "账号信息",
+    component: UserAccountView,
+    meta: {
+      access: ACCESS_ENUM.USER,
     },
   },
   {
