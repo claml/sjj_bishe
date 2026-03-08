@@ -1,5 +1,12 @@
 <template>
   <div id="userAccountView" class="light-page">
+    <a-button class="back-home-button" type="text" @click="goHome">
+      <template #icon>
+        <icon-left />
+      </template>
+      返回主页
+    </a-button>
+
     <a-card class="profile-header" :bordered="false">
       <div class="profile-main">
         <a-avatar :size="76" class="avatar">
@@ -118,10 +125,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { Message } from "@arco-design/web-vue";
+import { IconLeft } from "@arco-design/web-vue/es/icon";
+import { useRouter } from "vue-router";
 import { UserControllerService } from "../../../generated";
 
 const defaultAvatar =
   "https://p3-passport.byteimg.com/img/user-avatar-placeholder.jpeg~180x180.awebp";
+
+const router = useRouter();
 
 const userInfo = reactive({
   userAvatar: "",
@@ -167,6 +178,10 @@ const formatRegisterTime = (createTime?: string) => {
     return createTime;
   }
   return date.toLocaleString("zh-CN", { hour12: false });
+};
+
+const goHome = () => {
+  router.push("/");
 };
 
 const loadUserInfo = async () => {
@@ -255,6 +270,16 @@ onMounted(() => {
   min-height: 100%;
   padding: 20px;
   background: #f5f7fb;
+}
+
+.back-home-button {
+  margin-bottom: 16px;
+  padding: 0;
+  color: #667085;
+}
+
+.back-home-button:hover {
+  color: #4b5565;
 }
 
 .profile-header,
