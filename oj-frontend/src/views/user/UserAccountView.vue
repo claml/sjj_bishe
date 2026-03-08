@@ -51,9 +51,6 @@
                 </div>
               </a-tooltip>
             </div>
-            <span class="value-text">{{
-              userInfo.userAvatar || "未设置"
-            }}</span>
           </div>
         </div>
 
@@ -89,9 +86,14 @@
 
         <div class="info-item">
           <span class="label">简介</span>
-          <span class="value">{{
-            userInfo.userProfile || "这个人很懒，还没有填写简介"
-          }}</span>
+          <div class="value profile-area">
+            <span class="profile-content" @click="openProfileDialog">{{
+              userInfo.userProfile || "这个人很懒，还没有填写简介"
+            }}</span>
+            <a-button size="small" type="outline" @click="openProfileDialog">
+              编辑简介
+            </a-button>
+          </div>
         </div>
 
         <div class="info-item">
@@ -153,8 +155,7 @@
               allow-clear
             />
             <p class="password-hint">
-              密码必须至少包含 8 个字符，包含字母和数字，且不允许特殊字符或非
-              ASCII 字符。
+              {{ PASSWORD_RULE_HINT }}
             </p>
           </div>
 
@@ -171,6 +172,52 @@
         </div>
       </div>
     </transition>
+
+    <transition name="fade">
+      <div
+        v-if="profileDialogVisible"
+        class="password-dialog-mask"
+        @click="closeProfileDialog"
+      >
+        <div class="password-dialog profile-dialog" @click.stop>
+          <button
+            class="dialog-close"
+            type="button"
+            @click="closeProfileDialog"
+          >
+            <icon-close />
+          </button>
+          <h3 class="dialog-title">编辑个人简介</h3>
+
+          <div class="dialog-form-item">
+            <label class="dialog-label">简介</label>
+            <a-textarea
+              v-model="profileForm.userProfile"
+              class="dialog-textarea"
+              placeholder="请输入个人简介"
+              :max-length="profileMaxLength"
+              :auto-size="{ minRows: 5, maxRows: 8 }"
+              show-word-limit
+              allow-clear
+            />
+            <p class="profile-count">
+              {{ profileLength }} / {{ profileMaxLength }}
+            </p>
+          </div>
+
+          <div class="dialog-actions">
+            <a-button @click="closeProfileDialog">取消</a-button>
+            <a-button
+              type="primary"
+              :loading="profileSubmitting"
+              @click="handleSaveProfile"
+            >
+              保存
+            </a-button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -180,6 +227,10 @@ import { Message } from "@arco-design/web-vue";
 import { IconClose, IconEdit, IconLeft } from "@arco-design/web-vue/es/icon";
 import { useRouter } from "vue-router";
 import { UserControllerService } from "../../../generated";
+import {
+  PASSWORD_RULE_HINT,
+  validatePasswordByRegisterRule,
+} from "@/utils/passwordRules";
 
 const defaultAvatar =
   "https://p3-passport.byteimg.com/img/user-avatar-placeholder.jpeg~180x180.awebp";
@@ -216,6 +267,15 @@ const passwordForm = reactive({
   oldPassword: "",
   newPassword: "",
 });
+
+const profileDialogVisible = ref(false);
+const profileSubmitting = ref(false);
+const profileMaxLength = 500;
+const profileForm = reactive({
+  userProfile: "",
+});
+
+const profileLength = computed(() => profileForm.userProfile.length);
 
 const roleTag = computed(() => {
   switch (userInfo.userRole) {
@@ -335,29 +395,50 @@ const validatePasswordForm = () => {
     Message.warning("新密码不能为空");
     return false;
   }
-  if (passwordForm.newPassword.length < 8) {
-    Message.warning("新密码长度至少 8 位");
-    return false;
-  }
-  const isAsciiOnly = passwordForm.newPassword
-    .split("")
-    .every((char) => char.charCodeAt(0) <= 127);
-  if (!isAsciiOnly) {
-    Message.warning("新密码只能使用 ASCII 字符");
-    return false;
-  }
-  if (
-    !/[A-Za-z]/.test(passwordForm.newPassword) ||
-    !/[0-9]/.test(passwordForm.newPassword)
-  ) {
-    Message.warning("新密码必须同时包含字母和数字");
-    return false;
-  }
-  if (!/^[A-Za-z0-9]+$/.test(passwordForm.newPassword)) {
-    Message.warning("新密码不允许包含特殊字符");
+  const passwordError = validatePasswordByRegisterRule(
+    passwordForm.newPassword
+  );
+  if (passwordError) {
+    Message.warning(passwordError);
     return false;
   }
   return true;
+};
+
+const openProfileDialog = () => {
+  profileForm.userProfile = userInfo.userProfile || "";
+  profileDialogVisible.value = true;
+};
+
+const closeProfileDialog = () => {
+  if (profileSubmitting.value) {
+    return;
+  }
+  profileDialogVisible.value = false;
+};
+
+const handleSaveProfile = async () => {
+  if (profileForm.userProfile.length > profileMaxLength) {
+    Message.warning(`简介不能超过 ${profileMaxLength} 字`);
+    return;
+  }
+
+  try {
+    profileSubmitting.value = true;
+    // 预留更新个人简介接口位置
+    await UserControllerService.updateMyUserUsingPost({
+      userProfile: profileForm.userProfile,
+    });
+    userInfo.userProfile = profileForm.userProfile;
+    Message.success("简介更新成功");
+    closeProfileDialog();
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "简介更新失败";
+    Message.error(errorMessage);
+  } finally {
+    profileSubmitting.value = false;
+  }
 };
 
 const handleChangePassword = async () => {
@@ -525,9 +606,19 @@ onMounted(() => {
   justify-content: flex-start;
 }
 
-.value-text {
+.profile-area {
+  align-items: flex-start;
+}
+
+.profile-content {
+  flex: 1;
   color: #667085;
-  word-break: break-all;
+  cursor: pointer;
+  word-break: break-word;
+}
+
+.profile-content:hover {
+  color: #475467;
 }
 
 .password-area {
@@ -615,6 +706,28 @@ onMounted(() => {
 :deep(.dialog-input .arco-input-password.arco-input-focus) {
   border-color: #5b8ff9;
   box-shadow: 0 0 0 3px rgba(91, 143, 249, 0.18);
+}
+
+:deep(.dialog-textarea .arco-textarea-wrapper) {
+  border-radius: 10px;
+  background: #fafbfd;
+  border: 1px solid #d0d5dd;
+}
+
+:deep(.dialog-textarea .arco-textarea-wrapper:hover) {
+  border-color: #98a2b3;
+}
+
+:deep(.dialog-textarea .arco-textarea-wrapper.arco-textarea-focus) {
+  border-color: #5b8ff9;
+  box-shadow: 0 0 0 3px rgba(91, 143, 249, 0.18);
+}
+
+.profile-count {
+  margin: 8px 0 0;
+  text-align: right;
+  color: #667085;
+  font-size: 12px;
 }
 
 .dialog-actions {
