@@ -7,9 +7,8 @@ import com.sjj.oj_backend.exception.BusinessException;
 import com.sjj.oj_backend.model.dto.file.UploadFileRequest;
 import com.sjj.oj_backend.model.enums.FileUploadBizEnum;
 import com.sjj.oj_backend.service.FileService;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-//import org.springframework.core.io.Resource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class FileController {
 
-    @Resource
+    @javax.annotation.Resource
     private FileService fileService;
 
     /**
@@ -65,7 +64,7 @@ public class FileController {
      */
     @GetMapping("/avatar/{fileName}")
     public ResponseEntity<Resource> getAvatar(@PathVariable String fileName) {
-        Resource resource = (Resource) fileService.loadAvatarAsResource(fileName);
+        Resource resource = fileService.loadAvatarAsResource(fileName);
         MediaType mediaType = resolveMediaType(fileName);
         return ResponseEntity.ok().contentType(mediaType).body(resource);
     }
