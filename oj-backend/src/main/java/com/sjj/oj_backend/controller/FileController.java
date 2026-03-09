@@ -43,11 +43,13 @@ public class FileController {
         if (bizEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的上传业务类型");
         }
-        if (!FileUploadBizEnum.USER_AVATAR.equals(bizEnum)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "当前仅支持用户头像上传");
+        if (FileUploadBizEnum.USER_AVATAR.equals(bizEnum)) {
+            return ResultUtils.success(fileService.uploadAvatar(multipartFile));
         }
-        String avatarUrl = fileService.uploadAvatar(multipartFile);
-        return ResultUtils.success(avatarUrl);
+        if (FileUploadBizEnum.POST_IMAGE.equals(bizEnum)) {
+            return ResultUtils.success(fileService.uploadPostImage(multipartFile));
+        }
+        throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的上传业务类型");
     }
 
     /**
@@ -65,6 +67,16 @@ public class FileController {
     @GetMapping("/avatar/{fileName}")
     public ResponseEntity<Resource> getAvatar(@PathVariable String fileName) {
         Resource resource = fileService.loadAvatarAsResource(fileName);
+        MediaType mediaType = resolveMediaType(fileName);
+        return ResponseEntity.ok().contentType(mediaType).body(resource);
+    }
+
+    /**
+     * 获取帖子图片
+     */
+    @GetMapping("/post/{fileName}")
+    public ResponseEntity<Resource> getPostImage(@PathVariable String fileName) {
+        Resource resource = fileService.loadPostImageAsResource(fileName);
         MediaType mediaType = resolveMediaType(fileName);
         return ResponseEntity.ok().contentType(mediaType).body(resource);
     }

@@ -13,7 +13,9 @@ import org.apache.commons.lang3.ObjectUtils;
  */
 public enum FileUploadBizEnum {
 
-    USER_AVATAR("用户头像", "user_avatar");
+    USER_AVATAR("用户头像", "user_avatar"),
+
+    POST_IMAGE("帖子图片", "post_image");
 
     private final String text;
 

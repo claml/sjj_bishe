@@ -67,6 +67,10 @@ public class PostController {
         if (tags != null) {
             post.setTags(JSONUtil.toJsonStr(tags));
         }
+        List<String> images = postAddRequest.getImages();
+        if (images != null) {
+            post.setImages(JSONUtil.toJsonStr(images));
+        }
         postService.validPost(post, true);
         User loginUser = userService.getLoginUser(request);
         post.setUserId(loginUser.getId());
@@ -120,6 +124,10 @@ public class PostController {
         List<String> tags = postUpdateRequest.getTags();
         if (tags != null) {
             post.setTags(JSONUtil.toJsonStr(tags));
+        }
+        List<String> images = postUpdateRequest.getImages();
+        if (images != null) {
+            post.setImages(JSONUtil.toJsonStr(images));
         }
         // 参数校验
         postService.validPost(post, false);
@@ -247,6 +255,10 @@ public class PostController {
         List<String> tags = postEditRequest.getTags();
         if (tags != null) {
             post.setTags(JSONUtil.toJsonStr(tags));
+        }
+        List<String> images = postEditRequest.getImages();
+        if (images != null) {
+            post.setImages(JSONUtil.toJsonStr(images));
         }
         // 参数校验
         postService.validPost(post, false);

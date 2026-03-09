@@ -50,6 +50,11 @@ public class PostEsDTO implements Serializable {
     private List<String> tags;
 
     /**
+     * 图片列表
+     */
+    private List<String> images;
+
+    /**
      * 点赞数
      */
     private Integer thumbNum;
@@ -99,6 +104,10 @@ public class PostEsDTO implements Serializable {
         if (StringUtils.isNotBlank(tagsStr)) {
             postEsDTO.setTags(JSONUtil.toList(tagsStr, String.class));
         }
+        String imagesStr = post.getImages();
+        if (StringUtils.isNotBlank(imagesStr)) {
+            postEsDTO.setImages(JSONUtil.toList(imagesStr, String.class));
+        }
         return postEsDTO;
     }
 
@@ -117,6 +126,10 @@ public class PostEsDTO implements Serializable {
         List<String> tagList = postEsDTO.getTags();
         if (CollUtil.isNotEmpty(tagList)) {
             post.setTags(JSONUtil.toJsonStr(tagList));
+        }
+        List<String> imageList = postEsDTO.getImages();
+        if (CollUtil.isNotEmpty(imageList)) {
+            post.setImages(JSONUtil.toJsonStr(imageList));
         }
         return post;
     }

@@ -23,4 +23,14 @@ public interface FileService {
      * @return 头像资源
      */
     Resource loadAvatarAsResource(String fileName);
+
+    /**
+     * 上传帖子图片并返回访问 URL
+     */
+    String uploadPostImage(MultipartFile multipartFile);
+
+    /**
+     * 读取帖子图片文件
+     */
+    Resource loadPostImageAsResource(String fileName);
 }

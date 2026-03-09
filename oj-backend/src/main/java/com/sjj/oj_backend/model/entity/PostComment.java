@@ -10,69 +10,25 @@ import java.util.Date;
 import lombok.Data;
 
 /**
- * 帖子
- *
- * 
- * 
+ * 帖子评论
  */
-@TableName(value = "post")
+@TableName(value = "post_comment")
 @Data
-public class Post implements Serializable {
+public class PostComment implements Serializable {
 
-    /**
-     * id
-     */
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 标题
-     */
-    private String title;
+    private Long postId;
 
-    /**
-     * 内容
-     */
     private String content;
 
-    /**
-     * 标签列表 json
-     */
-    private String tags;
-
-    /**
-     * 图片列表 json
-     */
-    private String images;
-
-    /**
-     * 点赞数
-     */
-    private Integer thumbNum;
-
-    /**
-     * 收藏数
-     */
-    private Integer favourNum;
-
-    /**
-     * 创建用户 id
-     */
     private Long userId;
 
-    /**
-     * 创建时间
-     */
     private Date createTime;
 
-    /**
-     * 更新时间
-     */
     private Date updateTime;
 
-    /**
-     * 是否删除
-     */
     @TableLogic
     private Integer isDelete;
 
