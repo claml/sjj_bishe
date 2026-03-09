@@ -75,10 +75,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }
         String title = post.getTitle();
         String content = post.getContent();
-        String tags = post.getTags();
         // 创建时，参数不能为空
         if (add) {
-            ThrowUtils.throwIf(StringUtils.isAnyBlank(title, content, tags), ErrorCode.PARAMS_ERROR);
+            ThrowUtils.throwIf(StringUtils.isBlank(content), ErrorCode.PARAMS_ERROR, "内容不能为空");
         }
         // 有参数则校验
         if (StringUtils.isNotBlank(title) && title.length() > 80) {
@@ -124,8 +123,12 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         queryWrapper.ne(ObjectUtils.isNotEmpty(notId), "id", notId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
-                sortField);
+        queryWrapper.eq("isDelete", 0);
+        if (SqlUtils.validSortField(sortField)) {
+            queryWrapper.orderBy(true, CommonConstant.SORT_ORDER_ASC.equals(sortOrder), sortField);
+        } else {
+            queryWrapper.orderByDesc("createTime");
+        }
         return queryWrapper;
     }
 
@@ -306,7 +309,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     }
 
 }
-
 
 
 

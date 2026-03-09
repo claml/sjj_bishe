@@ -12,6 +12,7 @@ import QuestionsView from "@/views/question/QuestionsView.vue";
 import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import UpdateQuestionView from "@/views/question/UpdateQuestionView.vue";
 import UserAccountView from "@/views/user/UserAccountView.vue";
+import DiscussionView from "@/views/post/DiscussionView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -79,6 +80,11 @@ export const routes: Array<RouteRecordRaw> = [
       access: ACCESS_ENUM.USER,
       hideInMenu: true,
     },
+  },
+  {
+    path: "/discussion",
+    name: "讨论",
+    component: DiscussionView,
   },
   {
     path: "/manage/question/",

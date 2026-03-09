@@ -33,6 +33,11 @@ public class PostVO implements Serializable {
     private String content;
 
     /**
+     * 标签列表
+     */
+    private List<String> tags;
+
+    /**
      * 点赞数
      */
     private Integer thumbNum;
@@ -58,7 +63,7 @@ public class PostVO implements Serializable {
     private Date updateTime;
 
     /**
-     * 标签列表
+     * 标签列表（兼容旧字段）
      */
     private List<String> tagList;
 
@@ -89,8 +94,11 @@ public class PostVO implements Serializable {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postVO, post);
-        List<String> tagList = postVO.getTagList();
-        post.setTags(JSONUtil.toJsonStr(tagList));
+        List<String> tags = postVO.getTags();
+        if (tags == null) {
+            tags = postVO.getTagList();
+        }
+        post.setTags(JSONUtil.toJsonStr(tags));
         return post;
     }
 
@@ -106,7 +114,9 @@ public class PostVO implements Serializable {
         }
         PostVO postVO = new PostVO();
         BeanUtils.copyProperties(post, postVO);
-        postVO.setTagList(JSONUtil.toList(post.getTags(), String.class));
+        List<String> tags = JSONUtil.toList(post.getTags(), String.class);
+        postVO.setTags(tags);
+        postVO.setTagList(tags);
         return postVO;
     }
 }
