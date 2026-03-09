@@ -1,39 +1,48 @@
 <template>
   <div id="userLoginView" class="auth-page">
-    <div class="auth-card">
-      <h2 class="auth-title">用户登录</h2>
-      <a-form
-        class="auth-form"
-        label-align="left"
-        auto-label-width
-        :model="form"
-        @submit="handleSubmit"
-      >
-        <a-form-item field="userAccount" label="账号">
-          <a-input v-model="form.userAccount" placeholder="请输入账号" />
-        </a-form-item>
-        <a-form-item
-          field="userPassword"
-          tooltip="密码不少于 8 位"
-          label="密码"
+    <div class="auth-container">
+      <h1 class="auth-main-title">在线编程学习平台</h1>
+      <div class="auth-card">
+        <h2 class="auth-title">用户登录</h2>
+        <a-form
+          class="auth-form"
+          label-align="left"
+          auto-label-width
+          :model="form"
+          @submit="handleSubmit"
         >
-          <a-input-password
-            v-model="form.userPassword"
-            placeholder="请输入密码"
-          />
-        </a-form-item>
-        <a-form-item class="auth-submit-item">
-          <a-button type="primary" html-type="submit" class="auth-submit-btn">
-            登录
-          </a-button>
-        </a-form-item>
-      </a-form>
+          <a-form-item field="userAccount" label="账号">
+            <a-input v-model="form.userAccount" placeholder="请输入账号" />
+          </a-form-item>
+          <a-form-item
+            field="userPassword"
+            tooltip="密码不少于 8 位"
+            label="密码"
+          >
+            <a-input-password
+              v-model="form.userPassword"
+              placeholder="请输入密码"
+            />
+          </a-form-item>
+          <a-form-item class="auth-submit-item">
+            <div class="button-container">
+              <a-button
+                type="primary"
+                html-type="submit"
+                class="auth-submit-btn"
+              >
+                登录
+              </a-button>
+            </div>
+          </a-form-item>
+        </a-form>
 
-      <div class="auth-switch">
-        没有账号？
-        <a-button type="text" class="auth-switch-link" @click="goRegister">
-          立即注册
-        </a-button>
+        <div class="auth-switch">
+          没有账号？
+          <a-button type="text" class="auth-switch-link" @click="goRegister">
+            立即注册
+          </a-button>
+        </div>
       </div>
     </div>
   </div>
@@ -90,8 +99,20 @@ const handleSubmit = async () => {
   box-sizing: border-box;
 }
 
-.auth-card {
+.auth-container {
   width: min(420px, 100%);
+}
+
+.auth-main-title {
+  margin: 0 0 28px;
+  text-align: center;
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 34px);
+  line-height: 1.25;
+  color: #1d2129;
+}
+
+.auth-card {
   background: #fff;
   border-radius: 14px;
   padding: 36px;
@@ -119,9 +140,14 @@ const handleSubmit = async () => {
 }
 
 .auth-submit-btn {
-  width: 100%;
+  width: 200px;
   height: 44px;
   border-radius: 8px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
 }
 
 .auth-switch {

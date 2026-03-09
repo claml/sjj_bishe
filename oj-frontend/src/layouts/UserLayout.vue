@@ -3,8 +3,7 @@
     <a-layout style="min-height: 100vh">
       <a-layout-header class="header">
         <a-space>
-          <div>毕业设计 bySjj</div>
-          <div>在线编程学习平台</div>
+          <div class="header-subtitle">毕业设计 by Sjj</div>
         </a-space>
       </a-layout-header>
       <a-layout-content class="content">
@@ -31,6 +30,12 @@
 
 #userLayout .header {
   margin-top: 16px;
+}
+
+#userLayout .header-subtitle {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+  letter-spacing: 0.5px;
 }
 
 #userLayout .content {
