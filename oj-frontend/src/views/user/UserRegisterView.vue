@@ -176,14 +176,16 @@ const handleSubmit = async () => {
 }
 
 .auth-submit-item {
-  margin-top: 8px;
+  margin-top: 20px;
   margin-bottom: 0;
 }
 
 .auth-submit-btn {
-  width: 200px;
-  height: 44px;
-  border-radius: 8px;
+  width: 240px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .button-container {
@@ -192,7 +194,7 @@ const handleSubmit = async () => {
 }
 
 .auth-switch {
-  margin-top: 14px;
+  margin-top: 16px;
   text-align: center;
   color: var(--color-text-2);
 }
