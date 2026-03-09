@@ -38,6 +38,11 @@ public class PostVO implements Serializable {
     private List<String> tags;
 
     /**
+     * 图片列表
+     */
+    private List<String> images;
+
+    /**
      * 点赞数
      */
     private Integer thumbNum;
@@ -99,6 +104,7 @@ public class PostVO implements Serializable {
             tags = postVO.getTagList();
         }
         post.setTags(JSONUtil.toJsonStr(tags));
+        post.setImages(JSONUtil.toJsonStr(postVO.getImages()));
         return post;
     }
 
@@ -117,6 +123,7 @@ public class PostVO implements Serializable {
         List<String> tags = JSONUtil.toList(post.getTags(), String.class);
         postVO.setTags(tags);
         postVO.setTagList(tags);
+        postVO.setImages(JSONUtil.toList(post.getImages(), String.class));
         return postVO;
     }
 }
