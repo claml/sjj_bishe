@@ -91,20 +91,22 @@ const handleSubmit = async () => {
 
 <style scoped>
 .auth-page {
-  min-height: 100vh;
+  width: 100%;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 0 16px;
   box-sizing: border-box;
 }
 
 .auth-container {
   width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .auth-main-title {
-  margin: 0 0 28px;
+  margin: 0 0 24px;
   text-align: center;
   font-weight: 700;
   font-size: clamp(28px, 4vw, 34px);
@@ -113,6 +115,8 @@ const handleSubmit = async () => {
 }
 
 .auth-card {
+  width: 100%;
+  margin-bottom: 16px;
   background: #fff;
   border-radius: 14px;
   padding: 36px;
