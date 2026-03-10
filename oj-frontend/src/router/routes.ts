@@ -13,6 +13,7 @@ import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import UpdateQuestionView from "@/views/question/UpdateQuestionView.vue";
 import UserAccountView from "@/views/user/UserAccountView.vue";
 import DiscussionView from "@/views/post/DiscussionView.vue";
+import PostDetailView from "@/views/post/PostDetailView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -85,6 +86,15 @@ export const routes: Array<RouteRecordRaw> = [
     path: "/discussion",
     name: "讨论",
     component: DiscussionView,
+  },
+  {
+    path: "/post/:id",
+    name: "帖子详情",
+    component: PostDetailView,
+    props: true,
+    meta: {
+      hideInMenu: true,
+    },
   },
   {
     path: "/manage/question/",

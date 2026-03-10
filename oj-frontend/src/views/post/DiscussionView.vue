@@ -119,56 +119,13 @@
             <a-button type="text" size="small" @click="doThumb(item)"
               >👍 {{ item.thumbNum || 0 }}</a-button
             >
-            <a-button type="text" size="small" @click="toggleComment(item)"
-              >评论 {{ item.commentCount || 0 }}</a-button
+            <a-button type="text" size="small" @click="goPostDetail(item.id)"
+              >查看详情</a-button
             >
             <a-button type="text" size="small" @click="doFavour(item)"
               >⭐ {{ item.favourNum || 0 }}</a-button
             >
           </a-space>
-
-          <div v-if="expandedComments[item.id]" class="comment-panel">
-            <a-textarea
-              v-model="commentInputs[item.id]"
-              :auto-size="{ minRows: 2, maxRows: 4 }"
-              placeholder="写下你的评论..."
-              allow-clear
-            />
-            <div class="comment-actions">
-              <a-button
-                type="primary"
-                size="small"
-                @click="submitComment(item.id)"
-                >提交评论</a-button
-              >
-            </div>
-            <a-spin :loading="commentLoading[item.id]">
-              <div v-if="commentListMap[item.id]?.length" class="comment-list">
-                <div
-                  v-for="comment in commentListMap[item.id]"
-                  :key="comment.id"
-                  class="comment-item"
-                >
-                  <a-avatar :size="32" :image-url="comment.user?.userAvatar">{{
-                    comment.user?.userName?.[0]
-                  }}</a-avatar>
-                  <div class="comment-main">
-                    <div class="comment-meta">
-                      <span class="comment-user">{{
-                        comment.user?.userName || "匿名用户"
-                      }}</span>
-                      <span class="comment-time">{{
-                        formatTime(comment.createTime)
-                      }}</span>
-                    </div>
-                    <div class="comment-content">{{ comment.content }}</div>
-                    <a-button type="text" size="mini">回复</a-button>
-                  </div>
-                </div>
-              </div>
-              <a-empty v-else description="暂无评论" />
-            </a-spin>
-          </div>
         </a-list-item>
       </template>
     </a-list>
@@ -185,10 +142,10 @@ import {
   PostThumbControllerService,
 } from "../../../generated";
 import message from "@arco-design/web-vue/es/message";
-import axios from "axios";
 import moment from "moment";
 import store from "@/store";
 import ACCESS_ENUM from "@/access/accessEnum";
+import { useRouter } from "vue-router";
 
 const publishForm = ref({
   title: "",
@@ -207,10 +164,7 @@ const searchParams = ref<PostQueryRequest>({
   pageSize: 10,
 });
 
-const expandedComments = ref<Record<string, boolean>>({});
-const commentLoading = ref<Record<string, boolean>>({});
-const commentListMap = ref<Record<string, any[]>>({});
-const commentInputs = ref<Record<string, string>>({});
+const router = useRouter();
 
 const parsePostImages = (rawImages: unknown): string[] => {
   if (!rawImages) {
@@ -253,7 +207,6 @@ const loadData = async () => {
         images: parsePostImages(
           item.images ?? item.imageUrls ?? item.picture ?? item.cover
         ),
-        commentCount: commentListMap.value[item.id]?.length || 0,
       }));
       total.value = Number(res.data.total) || 0;
     } else {
@@ -361,59 +314,8 @@ const doFavour = async (item: any) => {
   }
 };
 
-const loadComments = async (postId: string) => {
-  commentLoading.value[postId] = true;
-  try {
-    const { data } = await axios.post("/api/post_comment/list/page/vo", {
-      postId,
-      current: 1,
-      pageSize: 50,
-    });
-    if (data.code === 0) {
-      commentListMap.value[postId] = data.data.records || [];
-      const post = postList.value.find(
-        (item: any) => String(item.id) === String(postId)
-      );
-      if (post) {
-        post.commentCount = commentListMap.value[postId].length;
-      }
-    } else {
-      message.error(data.message || "评论加载失败");
-    }
-  } finally {
-    commentLoading.value[postId] = false;
-  }
-};
-
-const toggleComment = async (item: any) => {
-  const postId = String(item.id);
-  expandedComments.value[postId] = !expandedComments.value[postId];
-  if (expandedComments.value[postId] && !commentListMap.value[postId]) {
-    await loadComments(postId);
-  }
-};
-
-const submitComment = async (postId: string) => {
-  const content = commentInputs.value[postId]?.trim();
-  if (!content) {
-    message.warning("评论不能为空");
-    return;
-  }
-  if (isNotLogin()) {
-    message.warning("请先登录");
-    return;
-  }
-  const { data } = await axios.post("/api/post_comment/add", {
-    postId,
-    content,
-  });
-  if (data.code === 0) {
-    message.success("评论成功");
-    commentInputs.value[postId] = "";
-    await loadComments(postId);
-  } else {
-    message.error(data.message || "评论失败");
-  }
+const goPostDetail = (postId: string | number) => {
+  router.push(`/post/${postId}`);
 };
 
 const onPageChange = (page: number) => {
@@ -502,46 +404,6 @@ onMounted(async () => {
 .action-text {
   margin-top: 10px;
   color: #4e5969;
-}
-.comment-panel {
-  margin-top: 12px;
-  background: #f7f8fa;
-  border-radius: 8px;
-  padding: 12px;
-}
-.comment-actions {
-  margin: 8px 0 12px;
-  text-align: right;
-}
-.comment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.comment-item {
-  display: flex;
-  gap: 8px;
-}
-.comment-main {
-  flex: 1;
-  background: #fff;
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-.comment-meta {
-  font-size: 12px;
-  color: #86909c;
-  display: flex;
-  justify-content: space-between;
-}
-.comment-user {
-  font-weight: 600;
-  color: #1d2129;
-}
-.comment-content {
-  margin-top: 4px;
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 .img-error {
   width: 100%;
