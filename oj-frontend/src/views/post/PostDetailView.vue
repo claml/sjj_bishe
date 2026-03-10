@@ -5,7 +5,7 @@
         v-if="loadError"
         status="404"
         title="帖子不存在或已删除"
-        subtitle="请返回讨论页查看其他内容"
+        :subtitle="loadErrorMessage"
       >
         <template #extra>
           <a-button type="primary" @click="goDiscussion">返回讨论页</a-button>
@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Modal } from "@arco-design/web-vue";
 import message from "@arco-design/web-vue/es/message";
@@ -144,6 +144,7 @@ const router = useRouter();
 const loading = ref(false);
 const loadError = ref(false);
 const postDetail = ref<any>();
+const loadErrorMessage = ref("请返回讨论页查看其他内容");
 
 const commentLoading = ref(false);
 const submittingComment = ref(false);
@@ -152,6 +153,45 @@ const commentTotal = ref(0);
 const commentInput = ref("");
 
 const postId = computed(() => Number(route.params.id));
+
+const parseStringArray = (rawValue: unknown): string[] => {
+  if (!rawValue) {
+    return [];
+  }
+  if (Array.isArray(rawValue)) {
+    return rawValue.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  if (typeof rawValue === "string") {
+    const value = rawValue.trim();
+    if (!value) {
+      return [];
+    }
+    if (value.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => String(item || "").trim())
+            .filter(Boolean);
+        }
+      } catch (e) {
+        console.warn("帖子字段 JSON 解析失败", e);
+      }
+    }
+    return [value];
+  }
+  return [];
+};
+
+const normalizePostDetail = (rawPost: any) => {
+  return {
+    ...rawPost,
+    tags: parseStringArray(rawPost.tags ?? rawPost.tagList),
+    images: parseStringArray(
+      rawPost.images ?? rawPost.imageUrls ?? rawPost.picture ?? rawPost.cover
+    ),
+  };
+};
 
 const isNotLogin = () => {
   const loginUser = store.state.user.loginUser;
@@ -195,14 +235,16 @@ const loadPostDetail = async () => {
   try {
     const res = await PostControllerService.getPostVoByIdUsingGet(postId.value);
     if (res.code === 0 && res.data) {
-      postDetail.value = res.data;
+      postDetail.value = normalizePostDetail(res.data);
       await loadComments();
     } else {
       loadError.value = true;
+      loadErrorMessage.value = res.message || "请返回讨论页查看其他内容";
       message.error(res.message || "帖子加载失败");
     }
   } catch (error) {
     loadError.value = true;
+    loadErrorMessage.value = "帖子加载失败，请稍后重试";
     message.error("帖子加载失败");
   } finally {
     loading.value = false;
@@ -315,6 +357,13 @@ onMounted(async () => {
   await store.dispatch("user/getLoginUser");
   await loadPostDetail();
 });
+
+watch(
+  () => route.params.id,
+  async () => {
+    await loadPostDetail();
+  }
+);
 </script>
 
 <style scoped>
