@@ -19,6 +19,7 @@ import com.sjj.oj_backend.model.entity.User;
 import com.sjj.oj_backend.model.vo.PostVO;
 import com.sjj.oj_backend.service.PostService;
 import com.sjj.oj_backend.service.UserService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -150,9 +151,12 @@ public class PostController {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Post post = postService.getById(id);
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+        queryWrapper.eq("isDelete", 0);
+        Post post = postService.getOne(queryWrapper);
         if (post == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "帖子不存在或已删除");
         }
         return ResultUtils.success(postService.getPostVO(post, request));
     }
