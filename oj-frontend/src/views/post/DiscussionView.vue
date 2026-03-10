@@ -9,14 +9,27 @@
           allow-clear
           placeholder="分享你的想法..."
         />
-        <div v-if="publishForm.images.length" class="publish-image-preview-list">
-          <div v-for="(url, index) in publishForm.images" :key="url" class="preview-item">
+        <div
+          v-if="publishForm.images.length"
+          class="publish-image-preview-list"
+        >
+          <div
+            v-for="(url, index) in publishForm.images"
+            :key="url"
+            class="preview-item"
+          >
             <a-image :src="url" width="120" height="120" fit="cover">
               <template #error>
                 <div class="img-error">图片加载失败</div>
               </template>
             </a-image>
-            <a-button type="text" size="mini" status="danger" @click="removePublishImage(index)">移除</a-button>
+            <a-button
+              type="text"
+              size="mini"
+              status="danger"
+              @click="removePublishImage(index)"
+              >移除</a-button
+            >
           </div>
         </div>
         <a-space wrap>
@@ -31,7 +44,9 @@
             placeholder="标签（可选）"
             allow-clear
           />
-          <a-button :loading="uploadingImage" @click="triggerImageSelect">上传图片</a-button>
+          <a-button :loading="uploadingImage" @click="triggerImageSelect"
+            >上传图片</a-button
+          >
           <input
             ref="postImageInputRef"
             type="file"
@@ -70,13 +85,19 @@
       <template #item="{ item }">
         <a-list-item class="post-item">
           <div class="post-header">
-            <a-avatar :size="40" :image-url="item.user?.userAvatar">{{ item.user?.userName?.[0] }}</a-avatar>
+            <a-avatar :size="40" :image-url="item.user?.userAvatar">{{
+              item.user?.userName?.[0]
+            }}</a-avatar>
             <div>
-              <div class="user-name">{{ item.user?.userName || "匿名用户" }}</div>
+              <div class="user-name">
+                {{ item.user?.userName || "匿名用户" }}
+              </div>
               <div class="time-text">{{ formatTime(item.createTime) }}</div>
             </div>
           </div>
-          <a-tag v-if="firstTag(item)" color="arcoblue" class="first-tag">{{ firstTag(item) }}</a-tag>
+          <a-tag v-if="firstTag(item)" color="arcoblue" class="first-tag">{{
+            firstTag(item)
+          }}</a-tag>
           <div class="post-content">{{ item.content }}</div>
           <div v-if="item.images?.length" class="post-images">
             <a-image
@@ -84,6 +105,8 @@
               :key="image"
               :src="image"
               class="post-image"
+              :width="220"
+              :height="160"
               fit="cover"
               :preview="true"
             >
@@ -93,9 +116,15 @@
             </a-image>
           </div>
           <a-space class="action-text" size="large">
-            <a-button type="text" size="small" @click="doThumb(item)">👍 {{ item.thumbNum || 0 }}</a-button>
-            <a-button type="text" size="small" @click="toggleComment(item)">评论 {{ item.commentCount || 0 }}</a-button>
-            <a-button type="text" size="small" @click="doFavour(item)">⭐ {{ item.favourNum || 0 }}</a-button>
+            <a-button type="text" size="small" @click="doThumb(item)"
+              >👍 {{ item.thumbNum || 0 }}</a-button
+            >
+            <a-button type="text" size="small" @click="toggleComment(item)"
+              >评论 {{ item.commentCount || 0 }}</a-button
+            >
+            <a-button type="text" size="small" @click="doFavour(item)"
+              >⭐ {{ item.favourNum || 0 }}</a-button
+            >
           </a-space>
 
           <div v-if="expandedComments[item.id]" class="comment-panel">
@@ -106,16 +135,31 @@
               allow-clear
             />
             <div class="comment-actions">
-              <a-button type="primary" size="small" @click="submitComment(item.id)">提交评论</a-button>
+              <a-button
+                type="primary"
+                size="small"
+                @click="submitComment(item.id)"
+                >提交评论</a-button
+              >
             </div>
             <a-spin :loading="commentLoading[item.id]">
               <div v-if="commentListMap[item.id]?.length" class="comment-list">
-                <div v-for="comment in commentListMap[item.id]" :key="comment.id" class="comment-item">
-                  <a-avatar :size="32" :image-url="comment.user?.userAvatar">{{ comment.user?.userName?.[0] }}</a-avatar>
+                <div
+                  v-for="comment in commentListMap[item.id]"
+                  :key="comment.id"
+                  class="comment-item"
+                >
+                  <a-avatar :size="32" :image-url="comment.user?.userAvatar">{{
+                    comment.user?.userName?.[0]
+                  }}</a-avatar>
                   <div class="comment-main">
                     <div class="comment-meta">
-                      <span class="comment-user">{{ comment.user?.userName || '匿名用户' }}</span>
-                      <span class="comment-time">{{ formatTime(comment.createTime) }}</span>
+                      <span class="comment-user">{{
+                        comment.user?.userName || "匿名用户"
+                      }}</span>
+                      <span class="comment-time">{{
+                        formatTime(comment.createTime)
+                      }}</span>
                     </div>
                     <div class="comment-content">{{ comment.content }}</div>
                     <a-button type="text" size="mini">回复</a-button>
@@ -168,13 +212,47 @@ const commentLoading = ref<Record<string, boolean>>({});
 const commentListMap = ref<Record<string, any[]>>({});
 const commentInputs = ref<Record<string, string>>({});
 
+const parsePostImages = (rawImages: unknown): string[] => {
+  if (!rawImages) {
+    return [];
+  }
+  if (Array.isArray(rawImages)) {
+    return rawImages.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  if (typeof rawImages === "string") {
+    const value = rawImages.trim();
+    if (!value) {
+      return [];
+    }
+    if (value.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => String(item || "").trim())
+            .filter(Boolean);
+        }
+      } catch (error) {
+        console.warn("帖子图片 JSON 解析失败", error);
+      }
+    }
+    return [value];
+  }
+  return [];
+};
+
 const loadData = async () => {
   loading.value = true;
   try {
-    const res = await PostControllerService.listPostVoByPageUsingPost(searchParams.value);
+    const res = await PostControllerService.listPostVoByPageUsingPost(
+      searchParams.value
+    );
     if (res.code === 0) {
       postList.value = (res.data.records || []).map((item: any) => ({
         ...item,
+        images: parsePostImages(
+          item.images ?? item.imageUrls ?? item.picture ?? item.cover
+        ),
         commentCount: commentListMap.value[item.id]?.length || 0,
       }));
       total.value = Number(res.data.total) || 0;
@@ -203,7 +281,10 @@ const handlePostImageSelect = async (event: Event) => {
   }
   uploadingImage.value = true;
   try {
-    const res = await FileControllerService.uploadFileUsingPost(file, "post_image");
+    const res = await FileControllerService.uploadFileUsingPost(
+      file,
+      "post_image"
+    );
     if (res.code !== 0 || !res.data) {
       message.error(res.message || "图片上传失败");
       return;
@@ -255,7 +336,9 @@ const doThumb = async (item: any) => {
     message.warning("请先登录");
     return;
   }
-  const res = await PostThumbControllerService.doThumbUsingPost({ postId: item.id });
+  const res = await PostThumbControllerService.doThumbUsingPost({
+    postId: item.id,
+  });
   if (res.code === 0) {
     item.thumbNum = (item.thumbNum || 0) + (res.data || 0);
   } else {
@@ -268,7 +351,9 @@ const doFavour = async (item: any) => {
     message.warning("请先登录");
     return;
   }
-  const res = await PostFavourControllerService.doPostFavourUsingPost({ postId: item.id });
+  const res = await PostFavourControllerService.doPostFavourUsingPost({
+    postId: item.id,
+  });
   if (res.code === 0) {
     item.favourNum = (item.favourNum || 0) + (res.data || 0);
   } else {
@@ -286,7 +371,9 @@ const loadComments = async (postId: string) => {
     });
     if (data.code === 0) {
       commentListMap.value[postId] = data.data.records || [];
-      const post = postList.value.find((item: any) => String(item.id) === String(postId));
+      const post = postList.value.find(
+        (item: any) => String(item.id) === String(postId)
+      );
       if (post) {
         post.commentCount = commentListMap.value[postId].length;
       }
@@ -353,26 +440,117 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-#discussionView { max-width: 960px; margin: 0 auto; }
-.publish-card { margin-bottom: 16px; }
-.publish-image-preview-list { display: flex; gap: 12px; flex-wrap: wrap; }
-.preview-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.post-item { background: #fff; border-radius: 8px; margin-bottom: 12px; padding: 16px !important; display: block; }
-.post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.user-name { font-weight: 600; }
-.time-text { color: #86909c; font-size: 12px; }
-.first-tag { margin-bottom: 8px; }
-.post-content { white-space: pre-wrap; word-break: break-word; color: #1d2129; line-height: 1.7; }
-.post-images { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px; }
-.post-image { width: 220px; height: 160px; border-radius: 8px; overflow: hidden; }
-.action-text { margin-top: 10px; color: #4e5969; }
-.comment-panel { margin-top: 12px; background: #f7f8fa; border-radius: 8px; padding: 12px; }
-.comment-actions { margin: 8px 0 12px; text-align: right; }
-.comment-list { display: flex; flex-direction: column; gap: 10px; }
-.comment-item { display: flex; gap: 8px; }
-.comment-main { flex: 1; background: #fff; border-radius: 8px; padding: 8px 10px; }
-.comment-meta { font-size: 12px; color: #86909c; display: flex; justify-content: space-between; }
-.comment-user { font-weight: 600; color: #1d2129; }
-.comment-content { margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
-.img-error { width: 100%; height: 100%; background: #f2f3f5; display: flex; align-items: center; justify-content: center; color: #86909c; font-size: 12px; }
+#discussionView {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.publish-card {
+  margin-bottom: 16px;
+}
+.publish-image-preview-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.post-item {
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 16px !important;
+  display: block;
+}
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.user-name {
+  font-weight: 600;
+}
+.time-text {
+  color: #86909c;
+  font-size: 12px;
+}
+.first-tag {
+  margin-bottom: 8px;
+}
+.post-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #1d2129;
+  line-height: 1.7;
+}
+.post-images {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.post-image {
+  width: 220px;
+  height: 160px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.action-text {
+  margin-top: 10px;
+  color: #4e5969;
+}
+.comment-panel {
+  margin-top: 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+.comment-actions {
+  margin: 8px 0 12px;
+  text-align: right;
+}
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.comment-item {
+  display: flex;
+  gap: 8px;
+}
+.comment-main {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.comment-meta {
+  font-size: 12px;
+  color: #86909c;
+  display: flex;
+  justify-content: space-between;
+}
+.comment-user {
+  font-weight: 600;
+  color: #1d2129;
+}
+.comment-content {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.img-error {
+  width: 100%;
+  height: 100%;
+  background: #f2f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #86909c;
+  font-size: 12px;
+}
 </style>
