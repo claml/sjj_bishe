@@ -84,48 +84,55 @@
       </template>
       <template #item="{ item }">
         <a-list-item class="post-item">
-          <div class="post-header">
-            <a-avatar :size="40" :image-url="item.user?.userAvatar">{{
-              item.user?.userName?.[0]
-            }}</a-avatar>
-            <div>
-              <div class="user-name">
-                {{ item.user?.userName || "匿名用户" }}
+          <article class="post-card">
+            <header class="post-header">
+              <a-avatar :size="40" :image-url="item.user?.userAvatar">{{
+                item.user?.userName?.[0]
+              }}</a-avatar>
+              <div class="post-meta">
+                <div class="user-name">
+                  {{ item.user?.userName || "匿名用户" }}
+                </div>
+                <div class="time-text">{{ formatTime(item.createTime) }}</div>
               </div>
-              <div class="time-text">{{ formatTime(item.createTime) }}</div>
-            </div>
-          </div>
-          <a-tag v-if="firstTag(item)" color="arcoblue" class="first-tag">{{
-            firstTag(item)
-          }}</a-tag>
-          <div class="post-content">{{ item.content }}</div>
-          <div v-if="item.images?.length" class="post-images">
-            <a-image
-              v-for="image in item.images"
-              :key="image"
-              :src="image"
-              class="post-image"
-              :width="220"
-              :height="160"
-              fit="cover"
-              :preview="true"
-            >
-              <template #error>
-                <div class="img-error">图片加载失败</div>
-              </template>
-            </a-image>
-          </div>
-          <a-space class="action-text" size="large">
-            <a-button type="text" size="small" @click="doThumb(item)"
-              >👍 {{ item.thumbNum || 0 }}</a-button
-            >
-            <a-button type="text" size="small" @click="goPostDetail(item.id)"
-              >查看详情</a-button
-            >
-            <a-button type="text" size="small" @click="doFavour(item)"
-              >⭐ {{ item.favourNum || 0 }}</a-button
-            >
-          </a-space>
+            </header>
+
+            <section class="post-body">
+              <a-tag v-if="firstTag(item)" color="arcoblue" class="first-tag">{{
+                firstTag(item)
+              }}</a-tag>
+              <h3 v-if="item.title" class="post-title">{{ item.title }}</h3>
+              <div class="post-content">{{ item.content }}</div>
+              <div v-if="item.images?.length" class="post-images">
+                <a-image
+                  v-for="image in item.images"
+                  :key="image"
+                  :src="image"
+                  class="post-image"
+                  :width="220"
+                  :height="160"
+                  fit="cover"
+                  :preview="true"
+                >
+                  <template #error>
+                    <div class="img-error">图片加载失败</div>
+                  </template>
+                </a-image>
+              </div>
+            </section>
+
+            <footer class="action-text">
+              <a-button type="text" size="small" @click="doThumb(item)"
+                >👍 {{ item.thumbNum || 0 }}</a-button
+              >
+              <a-button type="text" size="small" @click="doFavour(item)"
+                >⭐ {{ item.favourNum || 0 }}</a-button
+              >
+              <a-button type="text" size="small" @click="goPostDetail(item.id)"
+                >查看详情</a-button
+              >
+            </footer>
+          </article>
         </a-list-item>
       </template>
     </a-list>
@@ -361,17 +368,26 @@ onMounted(async () => {
   gap: 4px;
 }
 .post-item {
-  background: #fff;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  padding: 16px !important;
+  margin-bottom: 16px;
+  padding: 0 !important;
+  border: none;
   display: block;
+}
+.post-card {
+  background: #fff;
+  border: 1px solid #e5e6eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  padding: 16px;
 }
 .post-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+}
+.post-meta {
+  min-width: 0;
 }
 .user-name {
   font-weight: 600;
@@ -381,7 +397,13 @@ onMounted(async () => {
   font-size: 12px;
 }
 .first-tag {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+.post-title {
+  margin: 0 0 8px;
+  color: #1d2129;
+  font-size: 16px;
+  font-weight: 600;
 }
 .post-content {
   white-space: pre-wrap;
@@ -390,7 +412,7 @@ onMounted(async () => {
   line-height: 1.7;
 }
 .post-images {
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -402,8 +424,11 @@ onMounted(async () => {
   overflow: hidden;
 }
 .action-text {
-  margin-top: 10px;
+  margin-top: 14px;
   color: #4e5969;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .img-error {
   width: 100%;

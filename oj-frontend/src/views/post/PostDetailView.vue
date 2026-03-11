@@ -152,7 +152,8 @@ const commentList = ref<any[]>([]);
 const commentTotal = ref(0);
 const commentInput = ref("");
 
-const postId = computed(() => Number(route.params.id));
+const postId = computed(() => String(route.params.id || "").trim());
+const isValidPostId = computed(() => /^\d+$/.test(postId.value));
 
 const parseStringArray = (rawValue: unknown): string[] => {
   if (!rawValue) {
@@ -226,14 +227,20 @@ const goDiscussion = () => {
 };
 
 const loadPostDetail = async () => {
-  if (!postId.value || postId.value <= 0) {
+  if (!isValidPostId.value) {
     loadError.value = true;
+    loadErrorMessage.value = "帖子参数错误，请返回讨论页重试";
     return;
   }
   loading.value = true;
   loadError.value = false;
   try {
-    const res = await PostControllerService.getPostVoByIdUsingGet(postId.value);
+    const { data } = await axios.get("/api/post/get/vo", {
+      params: {
+        id: postId.value,
+      },
+    });
+    const res = data;
     if (res.code === 0 && res.data) {
       postDetail.value = normalizePostDetail(res.data);
       await loadComments();
@@ -304,7 +311,7 @@ const doThumb = async () => {
     return;
   }
   const res = await PostThumbControllerService.doThumbUsingPost({
-    postId: postId.value,
+    postId: postId.value as any,
   });
   if (res.code === 0) {
     postDetail.value.thumbNum =
@@ -320,7 +327,7 @@ const doFavour = async () => {
     return;
   }
   const res = await PostFavourControllerService.doPostFavourUsingPost({
-    postId: postId.value,
+    postId: postId.value as any,
   });
   if (res.code === 0) {
     postDetail.value.favourNum =
@@ -341,7 +348,7 @@ const confirmDeletePost = () => {
     },
     onOk: async () => {
       const res = await PostControllerService.deletePostUsingPost({
-        id: postId.value,
+        id: postId.value as any,
       });
       if (res.code === 0) {
         message.success("删除成功");
