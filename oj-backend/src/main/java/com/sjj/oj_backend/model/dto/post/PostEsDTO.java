@@ -1,11 +1,9 @@
 package com.sjj.oj_backend.model.dto.post;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.json.JSONUtil;
 import com.sjj.oj_backend.model.entity.Post;
+import com.sjj.oj_backend.utils.PostContentCodec;
 import lombok.Data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -100,14 +98,8 @@ public class PostEsDTO implements Serializable {
         }
         PostEsDTO postEsDTO = new PostEsDTO();
         BeanUtils.copyProperties(post, postEsDTO);
-        String tagsStr = post.getTags();
-        if (StringUtils.isNotBlank(tagsStr)) {
-            postEsDTO.setTags(JSONUtil.toList(tagsStr, String.class));
-        }
-        String imagesStr = post.getImages();
-        if (StringUtils.isNotBlank(imagesStr)) {
-            postEsDTO.setImages(JSONUtil.toList(imagesStr, String.class));
-        }
+        postEsDTO.setTags(PostContentCodec.decodeTags(post.getTags()));
+        postEsDTO.setImages(PostContentCodec.decodeImages(post.getImages()));
         return postEsDTO;
     }
 
@@ -123,14 +115,8 @@ public class PostEsDTO implements Serializable {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postEsDTO, post);
-        List<String> tagList = postEsDTO.getTags();
-        if (CollUtil.isNotEmpty(tagList)) {
-            post.setTags(JSONUtil.toJsonStr(tagList));
-        }
-        List<String> imageList = postEsDTO.getImages();
-        if (CollUtil.isNotEmpty(imageList)) {
-            post.setImages(JSONUtil.toJsonStr(imageList));
-        }
+        post.setTags(PostContentCodec.encodeTags(postEsDTO.getTags()));
+        post.setImages(PostContentCodec.encodeImages(postEsDTO.getImages()));
         return post;
     }
 }

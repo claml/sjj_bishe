@@ -85,7 +85,8 @@ create table if not exists post_thumb
     createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     index idx_postId (postId),
-    index idx_userId (userId)
+    index idx_userId (userId),
+    unique key uk_post_user (postId, userId)
 ) comment '帖子点赞';
 
 -- 帖子收藏表（硬删除）
@@ -97,7 +98,8 @@ create table if not exists post_favour
     createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     index idx_postId (postId),
-    index idx_userId (userId)
+    index idx_userId (userId),
+    unique key uk_post_user (postId, userId)
 ) comment '帖子收藏';
 
 
