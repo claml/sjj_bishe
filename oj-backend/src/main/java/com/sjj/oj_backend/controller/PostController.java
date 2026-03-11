@@ -1,6 +1,5 @@
 package com.sjj.oj_backend.controller;
 
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sjj.oj_backend.annotation.AuthCheck;
 import com.sjj.oj_backend.common.BaseResponse;
@@ -17,10 +16,10 @@ import com.sjj.oj_backend.model.dto.post.PostUpdateRequest;
 import com.sjj.oj_backend.model.entity.Post;
 import com.sjj.oj_backend.model.entity.User;
 import com.sjj.oj_backend.model.vo.PostVO;
+import com.sjj.oj_backend.utils.PostContentCodec;
 import com.sjj.oj_backend.service.PostService;
 import com.sjj.oj_backend.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -65,14 +64,7 @@ public class PostController {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postAddRequest, post);
-        List<String> tags = postAddRequest.getTags();
-        if (tags != null) {
-            post.setTags(JSONUtil.toJsonStr(tags));
-        }
-        List<String> images = postAddRequest.getImages();
-        if (images != null) {
-            post.setImages(JSONUtil.toJsonStr(images));
-        }
+        applyPostContent(post, postAddRequest.getTags(), postAddRequest.getImages());
         postService.validPost(post, true);
         User loginUser = userService.getLoginUser(request);
         post.setUserId(loginUser.getId());
@@ -123,14 +115,7 @@ public class PostController {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postUpdateRequest, post);
-        List<String> tags = postUpdateRequest.getTags();
-        if (tags != null) {
-            post.setTags(JSONUtil.toJsonStr(tags));
-        }
-        List<String> images = postUpdateRequest.getImages();
-        if (images != null) {
-            post.setImages(JSONUtil.toJsonStr(images));
-        }
+        applyPostContent(post, postUpdateRequest.getTags(), postUpdateRequest.getImages());
         // 参数校验
         postService.validPost(post, false);
         long id = postUpdateRequest.getId();
@@ -149,15 +134,7 @@ public class PostController {
      */
     @GetMapping("/get/vo")
     public BaseResponse<PostVO> getPostVOById(@RequestParam("id") String idStr, HttpServletRequest request) {
-        long id;
-        try {
-            id = Long.parseLong(idStr);
-        } catch (NumberFormatException e) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "帖子 id 非法");
-        }
-        if (id <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
+        long id = parsePostId(idStr);
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", id);
         queryWrapper.eq("isDelete", 0);
@@ -263,14 +240,7 @@ public class PostController {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postEditRequest, post);
-        List<String> tags = postEditRequest.getTags();
-        if (tags != null) {
-            post.setTags(JSONUtil.toJsonStr(tags));
-        }
-        List<String> images = postEditRequest.getImages();
-        if (images != null) {
-            post.setImages(JSONUtil.toJsonStr(images));
-        }
+        applyPostContent(post, postEditRequest.getTags(), postEditRequest.getImages());
         // 参数校验
         postService.validPost(post, false);
         User loginUser = userService.getLoginUser(request);
@@ -284,6 +254,29 @@ public class PostController {
         }
         boolean result = postService.updateById(post);
         return ResultUtils.success(result);
+    }
+
+
+    private long parsePostId(String idStr) {
+        long id;
+        try {
+            id = Long.parseLong(idStr);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "帖子 id 非法");
+        }
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        return id;
+    }
+
+    private void applyPostContent(Post post, java.util.List<String> tags, java.util.List<String> images) {
+        if (tags != null) {
+            post.setTags(PostContentCodec.encodeTags(tags));
+        }
+        if (images != null) {
+            post.setImages(PostContentCodec.encodeImages(images));
+        }
     }
 
 }
