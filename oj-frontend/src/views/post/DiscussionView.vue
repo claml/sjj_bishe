@@ -153,6 +153,7 @@ import moment from "moment";
 import store from "@/store";
 import ACCESS_ENUM from "@/access/accessEnum";
 import { useRouter } from "vue-router";
+import { normalizePost } from "@/utils/postAdapter";
 
 const publishForm = ref({
   title: "",
@@ -173,35 +174,6 @@ const searchParams = ref<PostQueryRequest>({
 
 const router = useRouter();
 
-const parsePostImages = (rawImages: unknown): string[] => {
-  if (!rawImages) {
-    return [];
-  }
-  if (Array.isArray(rawImages)) {
-    return rawImages.map((item) => String(item || "").trim()).filter(Boolean);
-  }
-  if (typeof rawImages === "string") {
-    const value = rawImages.trim();
-    if (!value) {
-      return [];
-    }
-    if (value.startsWith("[")) {
-      try {
-        const parsed = JSON.parse(value);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .map((item) => String(item || "").trim())
-            .filter(Boolean);
-        }
-      } catch (error) {
-        console.warn("帖子图片 JSON 解析失败", error);
-      }
-    }
-    return [value];
-  }
-  return [];
-};
-
 const loadData = async () => {
   loading.value = true;
   try {
@@ -209,12 +181,9 @@ const loadData = async () => {
       searchParams.value
     );
     if (res.code === 0) {
-      postList.value = (res.data.records || []).map((item: any) => ({
-        ...item,
-        images: parsePostImages(
-          item.images ?? item.imageUrls ?? item.picture ?? item.cover
-        ),
-      }));
+      postList.value = (res.data.records || []).map((item: any) =>
+        normalizePost(item)
+      );
       total.value = Number(res.data.total) || 0;
     } else {
       message.error(`加载失败，${res.message}`);

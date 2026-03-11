@@ -134,6 +134,18 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     @Override
     public Page<Post> searchFromEs(PostQueryRequest postQueryRequest) {
+        try {
+            return doSearchFromEs(postQueryRequest);
+        } catch (Exception e) {
+            log.error("searchFromEs failed, fallback to db, request={}", postQueryRequest, e);
+            return searchFromDb(postQueryRequest);
+        }
+    }
+
+    /**
+     * 从 ES 搜索
+     */
+    private Page<Post> doSearchFromEs(PostQueryRequest postQueryRequest) {
         Long id = postQueryRequest.getId();
         Long notId = postQueryRequest.getNotId();
         String searchText = postQueryRequest.getSearchText();
@@ -177,7 +189,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         // 按关键词检索
         if (StringUtils.isNotBlank(searchText)) {
             boolQueryBuilder.should(QueryBuilders.matchQuery("title", searchText));
-            boolQueryBuilder.should(QueryBuilders.matchQuery("description", searchText));
             boolQueryBuilder.should(QueryBuilders.matchQuery("content", searchText));
             boolQueryBuilder.minimumShouldMatch(1);
         }
@@ -227,6 +238,15 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }
         page.setRecords(resourceList);
         return page;
+    }
+
+    /**
+     * ES 异常时降级到 DB 搜索
+     */
+    private Page<Post> searchFromDb(PostQueryRequest postQueryRequest) {
+        long current = postQueryRequest.getCurrent();
+        long pageSize = postQueryRequest.getPageSize();
+        return this.page(new Page<>(current, pageSize), getQueryWrapper(postQueryRequest));
     }
 
     @Override
@@ -309,6 +329,5 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     }
 
 }
-
 
 

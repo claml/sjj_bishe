@@ -129,13 +129,20 @@ import { useRoute, useRouter } from "vue-router";
 import { Modal } from "@arco-design/web-vue";
 import message from "@arco-design/web-vue/es/message";
 import moment from "moment";
-import axios from "axios";
 import store from "@/store";
 import ACCESS_ENUM from "@/access/accessEnum";
 import {
   PostFavourControllerService,
   PostThumbControllerService,
 } from "../../../generated";
+import { normalizePost } from "@/utils/postAdapter";
+import {
+  addPostComment,
+  deletePost,
+  getErrorMessage,
+  getPostDetail,
+  listPostComments,
+} from "@/services/postApi";
 
 const route = useRoute();
 const router = useRouter();
@@ -154,45 +161,6 @@ const commentInput = ref("");
 const postId = computed(() => String(route.params.id ?? "").trim());
 
 const isValidPostId = computed(() => /^\d+$/.test(postId.value));
-
-const parseStringArray = (rawValue: unknown): string[] => {
-  if (!rawValue) {
-    return [];
-  }
-  if (Array.isArray(rawValue)) {
-    return rawValue.map((item) => String(item || "").trim()).filter(Boolean);
-  }
-  if (typeof rawValue === "string") {
-    const value = rawValue.trim();
-    if (!value) {
-      return [];
-    }
-    if (value.startsWith("[")) {
-      try {
-        const parsed = JSON.parse(value);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .map((item) => String(item || "").trim())
-            .filter(Boolean);
-        }
-      } catch (e) {
-        console.warn("帖子字段 JSON 解析失败", e);
-      }
-    }
-    return [value];
-  }
-  return [];
-};
-
-const normalizePostDetail = (rawPost: any) => {
-  return {
-    ...rawPost,
-    tags: parseStringArray(rawPost.tags ?? rawPost.tagList),
-    images: parseStringArray(
-      rawPost.images ?? rawPost.imageUrls ?? rawPost.picture ?? rawPost.cover
-    ),
-  };
-};
 
 const isNotLogin = () => {
   const loginUser = store.state.user.loginUser;
@@ -235,23 +203,11 @@ const loadPostDetail = async () => {
   loading.value = true;
   loadError.value = false;
   try {
-    const { data } = await axios.get("/api/post/get/vo", {
-      params: {
-        id: postId.value,
-      },
-    });
-    const res = data;
-    if (res.code === 0 && res.data) {
-      postDetail.value = normalizePostDetail(res.data);
-      await loadComments();
-    } else {
-      loadError.value = true;
-      loadErrorMessage.value = res.message || "请返回讨论页查看其他内容";
-      message.error(res.message || "帖子加载失败");
-    }
+    const detail = await getPostDetail(Number(postId.value));
+    postDetail.value = normalizePost(detail);
+    await loadComments();
   } catch (error) {
-    const errorMessage =
-      (error as any)?.response?.data?.message || "帖子加载失败，请稍后重试";
+    const errorMessage = getErrorMessage(error, "帖子加载失败，请稍后重试");
     loadError.value = true;
     loadErrorMessage.value = errorMessage;
     message.error(errorMessage);
@@ -263,17 +219,11 @@ const loadPostDetail = async () => {
 const loadComments = async () => {
   commentLoading.value = true;
   try {
-    const { data } = await axios.post("/api/post_comment/list/page/vo", {
-      postId: postId.value,
-      current: 1,
-      pageSize: 100,
-    });
-    if (data.code === 0) {
-      commentList.value = data.data.records || [];
-      commentTotal.value = Number(data.data.total) || commentList.value.length;
-    } else {
-      message.error(data.message || "评论加载失败");
-    }
+    const pageData = await listPostComments(Number(postId.value));
+    commentList.value = pageData.records || [];
+    commentTotal.value = Number(pageData.total) || commentList.value.length;
+  } catch (error) {
+    message.error(getErrorMessage(error, "评论加载失败"));
   } finally {
     commentLoading.value = false;
   }
@@ -291,17 +241,12 @@ const submitComment = async () => {
   }
   submittingComment.value = true;
   try {
-    const { data } = await axios.post("/api/post_comment/add", {
-      postId: postId.value,
-      content,
-    });
-    if (data.code === 0) {
-      commentInput.value = "";
-      message.success("评论成功");
-      await loadComments();
-    } else {
-      message.error(data.message || "评论失败");
-    }
+    await addPostComment(Number(postId.value), content);
+    commentInput.value = "";
+    message.success("评论成功");
+    await loadComments();
+  } catch (error) {
+    message.error(getErrorMessage(error, "评论失败"));
   } finally {
     submittingComment.value = false;
   }
@@ -349,14 +294,12 @@ const confirmDeletePost = () => {
       status: "danger",
     },
     onOk: async () => {
-      const { data: res } = await axios.post("/api/post/delete", {
-        id: postId.value as any,
-      });
-      if (res.code === 0) {
+      try {
+        await deletePost(Number(postId.value));
         message.success("删除成功");
         await router.push("/discussion");
-      } else {
-        message.error(res.message || "删除失败");
+      } catch (error) {
+        message.error(getErrorMessage(error, "删除失败"));
       }
     },
   });

@@ -2,8 +2,8 @@ package com.sjj.oj_backend.model.vo;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import cn.hutool.json.JSONUtil;
 import com.sjj.oj_backend.model.entity.Post;
+import com.sjj.oj_backend.utils.PostContentCodec;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -107,8 +107,8 @@ public class PostVO implements Serializable {
         if (tags == null) {
             tags = postVO.getTagList();
         }
-        post.setTags(JSONUtil.toJsonStr(tags));
-        post.setImages(JSONUtil.toJsonStr(postVO.getImages()));
+        post.setTags(PostContentCodec.encodeTags(tags));
+        post.setImages(PostContentCodec.encodeImages(postVO.getImages()));
         return post;
     }
 
@@ -124,10 +124,10 @@ public class PostVO implements Serializable {
         }
         PostVO postVO = new PostVO();
         BeanUtils.copyProperties(post, postVO);
-        List<String> tags = JSONUtil.toList(post.getTags(), String.class);
+        List<String> tags = PostContentCodec.decodeTags(post.getTags());
         postVO.setTags(tags);
         postVO.setTagList(tags);
-        postVO.setImages(JSONUtil.toList(post.getImages(), String.class));
+        postVO.setImages(PostContentCodec.decodeImages(post.getImages()));
         return postVO;
     }
 }

@@ -29,6 +29,9 @@
       "tags": {
         "type": "keyword"
       },
+      "images": {
+        "type": "keyword"
+      },
       "thumbNum": {
         "type": "long"
       },
@@ -36,7 +39,7 @@
         "type": "long"
       },
       "userId": {
-        "type": "keyword"
+        "type": "long"
       },
       "createTime": {
         "type": "date"
@@ -45,7 +48,7 @@
         "type": "date"
       },
       "isDelete": {
-        "type": "keyword"
+        "type": "integer"
       }
     }
   }
