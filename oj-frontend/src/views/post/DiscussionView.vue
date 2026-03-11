@@ -86,11 +86,18 @@
         <a-list-item class="post-item">
           <article class="post-card">
             <header class="post-header">
-              <a-avatar :size="40" :image-url="item.user?.userAvatar">{{
-                item.user?.userName?.[0]
-              }}</a-avatar>
+              <a-avatar
+                :size="40"
+                :image-url="item.user?.userAvatar"
+                class="clickable-user"
+                @click="goUserProfile(item.userId)"
+                >{{ item.user?.userName?.[0] }}</a-avatar
+              >
               <div class="post-meta">
-                <div class="user-name">
+                <div
+                  class="user-name clickable-user"
+                  @click="goUserProfile(item.userId)"
+                >
                   {{ item.user?.userName || "匿名用户" }}
                 </div>
                 <div class="time-text">{{ formatTime(item.createTime) }}</div>
@@ -294,6 +301,13 @@ const goPostDetail = (postId: string | number) => {
   router.push(`/post/${postId}`);
 };
 
+const goUserProfile = (userId: string | number) => {
+  if (!userId) {
+    return;
+  }
+  router.push(`/user/${userId}`);
+};
+
 const onPageChange = (page: number) => {
   searchParams.value.current = page;
   loadData();
@@ -360,6 +374,9 @@ onMounted(async () => {
 }
 .user-name {
   font-weight: 600;
+}
+.clickable-user {
+  cursor: pointer;
 }
 .time-text {
   color: #86909c;

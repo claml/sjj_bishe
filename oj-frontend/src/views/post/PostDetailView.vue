@@ -30,11 +30,18 @@
           </template>
 
           <div class="post-header">
-            <a-avatar :size="42" :image-url="postDetail.user?.userAvatar">{{
-              postDetail.user?.userName?.[0]
-            }}</a-avatar>
+            <a-avatar
+              :size="42"
+              :image-url="postDetail.user?.userAvatar"
+              class="clickable-user"
+              @click="goUserProfile(postDetail.userId)"
+              >{{ postDetail.user?.userName?.[0] }}</a-avatar
+            >
             <div>
-              <div class="user-name">
+              <div
+                class="user-name clickable-user"
+                @click="goUserProfile(postDetail.userId)"
+              >
                 {{ postDetail.user?.userName || "匿名用户" }}
               </div>
               <div class="time-text">
@@ -194,6 +201,13 @@ const goDiscussion = () => {
   router.push("/discussion");
 };
 
+const goUserProfile = (userId: string | number) => {
+  if (!userId) {
+    return;
+  }
+  router.push(`/user/${userId}`);
+};
+
 const loadPostDetail = async () => {
   if (!isValidPostId.value) {
     loadError.value = true;
@@ -341,6 +355,9 @@ watch(
 }
 .user-name {
   font-weight: 600;
+}
+.clickable-user {
+  cursor: pointer;
 }
 .time-text {
   color: #86909c;

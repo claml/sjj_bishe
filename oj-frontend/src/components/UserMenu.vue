@@ -10,6 +10,7 @@
       <span class="arrow-down">▼</span>
     </div>
     <template #content>
+      <a-doption @click="goToMyProfile">个人主页</a-doption>
       <a-doption @click="goToAccountInfo">账号信息</a-doption>
       <a-doption @click="logout">退出登录</a-doption>
     </template>
@@ -43,6 +44,15 @@ const displayAvatar = computed(
 const goToAccountInfo = async () => {
   // 跳转账号信息页接口
   await router.push({ path: "/user/account" });
+};
+
+const goToMyProfile = async () => {
+  const userId = loginUser.value?.id;
+  if (!userId) {
+    await router.push({ path: "/user/login" });
+    return;
+  }
+  await router.push({ path: `/user/${userId}` });
 };
 
 const logout = async () => {

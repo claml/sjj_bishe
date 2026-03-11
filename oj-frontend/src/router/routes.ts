@@ -14,6 +14,7 @@ import UpdateQuestionView from "@/views/question/UpdateQuestionView.vue";
 import UserAccountView from "@/views/user/UserAccountView.vue";
 import DiscussionView from "@/views/post/DiscussionView.vue";
 import PostDetailView from "@/views/post/PostDetailView.vue";
+import UserProfileView from "@/views/user/UserProfileView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -79,6 +80,15 @@ export const routes: Array<RouteRecordRaw> = [
     component: UserAccountView,
     meta: {
       access: ACCESS_ENUM.USER,
+      hideInMenu: true,
+    },
+  },
+  {
+    path: "/user/:id",
+    name: "个人主页",
+    component: UserProfileView,
+    props: true,
+    meta: {
       hideInMenu: true,
     },
   },

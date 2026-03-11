@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sjj.oj_backend.common.BaseResponse;
 import com.sjj.oj_backend.common.ErrorCode;
 import com.sjj.oj_backend.common.ResultUtils;
+import com.sjj.oj_backend.constant.UserConstant;
 import com.sjj.oj_backend.exception.BusinessException;
 import com.sjj.oj_backend.exception.ThrowUtils;
 import com.sjj.oj_backend.model.dto.post.PostQueryRequest;
@@ -100,8 +101,13 @@ public class PostFavourController {
         long current = postFavourQueryRequest.getCurrent();
         long size = postFavourQueryRequest.getPageSize();
         Long userId = postFavourQueryRequest.getUserId();
+        User loginUser = userService.getLoginUser(request);
         // 限制爬虫
         ThrowUtils.throwIf(size > 20 || userId == null, ErrorCode.PARAMS_ERROR);
+        // 仅本人可查看收藏列表（管理员除外）
+        if (!userId.equals(loginUser.getId()) && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权查看他人收藏");
+        }
         Page<Post> postPage = postFavourService.listFavourPostByPage(new Page<>(current, size),
                 postService.getQueryWrapper(postFavourQueryRequest.getPostQueryRequest()), userId);
         return ResultUtils.success(postService.getPostVOPage(postPage, request));
