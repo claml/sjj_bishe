@@ -70,9 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watchEffect, withDefaults, defineProps } from "vue";
+import { onMounted, ref, watch, withDefaults, defineProps } from "vue";
 import {
-  Question,
   QuestionControllerService,
   QuestionSubmitAddRequest,
   QuestionSubmitControllerService,
@@ -137,6 +136,13 @@ onMounted(() => {
 const changeCode = (value: string) => {
   form.value.code = value;
 };
+
+watch(
+  () => props.id,
+  () => {
+    loadData();
+  }
+);
 </script>
 
 <style>

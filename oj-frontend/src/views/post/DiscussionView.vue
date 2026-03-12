@@ -90,13 +90,13 @@
                 :size="40"
                 :image-url="item.user?.userAvatar"
                 class="clickable-user"
-                @click="goUserProfile(item.userId)"
+                @click="goUserProfile(item.userId, $event)"
                 >{{ item.user?.userName?.[0] }}</a-avatar
               >
               <div class="post-meta">
                 <div
                   class="user-name clickable-user"
-                  @click="goUserProfile(item.userId)"
+                  @click="goUserProfile(item.userId, $event)"
                 >
                   {{ item.user?.userName || "匿名用户" }}
                 </div>
@@ -135,7 +135,10 @@
               <a-button type="text" size="small" @click="doFavour(item)"
                 >⭐ {{ item.favourNum || 0 }}</a-button
               >
-              <a-button type="text" size="small" @click="goPostDetail(item.id)"
+              <a-button
+                type="text"
+                size="small"
+                @click="goPostDetail(item.id, $event)"
                 >查看详情</a-button
               >
             </footer>
@@ -161,6 +164,7 @@ import store from "@/store";
 import ACCESS_ENUM from "@/access/accessEnum";
 import { useRouter } from "vue-router";
 import { normalizePost } from "@/utils/postAdapter";
+import { openPage, shouldOpenInNewTab } from "@/utils/navigation";
 
 const publishForm = ref({
   title: "",
@@ -297,15 +301,19 @@ const doFavour = async (item: any) => {
   }
 };
 
-const goPostDetail = (postId: string | number) => {
-  router.push(`/post/${postId}`);
+const goPostDetail = (postId: string | number, event?: MouseEvent) => {
+  return openPage(router, `/post/${postId}`, {
+    newTab: shouldOpenInNewTab(event),
+  });
 };
 
-const goUserProfile = (userId: string | number) => {
+const goUserProfile = (userId: string | number, event?: MouseEvent) => {
   if (!userId) {
     return;
   }
-  router.push(`/user/${userId}`);
+  return openPage(router, `/user/${userId}`, {
+    newTab: shouldOpenInNewTab(event),
+  });
 };
 
 const onPageChange = (page: number) => {

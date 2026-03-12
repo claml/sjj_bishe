@@ -34,13 +34,13 @@
               :size="42"
               :image-url="postDetail.user?.userAvatar"
               class="clickable-user"
-              @click="goUserProfile(postDetail.userId)"
+              @click="goUserProfile(postDetail.userId, $event)"
               >{{ postDetail.user?.userName?.[0] }}</a-avatar
             >
             <div>
               <div
                 class="user-name clickable-user"
-                @click="goUserProfile(postDetail.userId)"
+                @click="goUserProfile(postDetail.userId, $event)"
               >
                 {{ postDetail.user?.userName || "匿名用户" }}
               </div>
@@ -150,6 +150,7 @@ import {
   getPostDetail,
   listPostComments,
 } from "@/services/postApi";
+import { openPage, shouldOpenInNewTab } from "@/utils/navigation";
 
 const route = useRoute();
 const router = useRouter();
@@ -201,11 +202,13 @@ const goDiscussion = () => {
   router.push("/discussion");
 };
 
-const goUserProfile = (userId: string | number) => {
+const goUserProfile = (userId: string | number, event?: MouseEvent) => {
   if (!userId) {
     return;
   }
-  router.push(`/user/${userId}`);
+  return openPage(router, `/user/${userId}`, {
+    newTab: shouldOpenInNewTab(event),
+  });
 };
 
 const loadPostDetail = async () => {

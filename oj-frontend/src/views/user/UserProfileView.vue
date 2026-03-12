@@ -66,7 +66,10 @@
                   </template>
                   <template #item="{ item }">
                     <a-list-item class="list-item">
-                      <div class="list-title" @click="goPostDetail(item.id)">
+                      <div
+                        class="list-title"
+                        @click="goPostDetail(item.id, $event)"
+                      >
                         {{ item.title || "无标题帖子" }}
                       </div>
                       <div class="list-content">{{ item.content }}</div>
@@ -95,7 +98,7 @@
                     <a-button
                       type="text"
                       size="small"
-                      @click="goQuestion(record.id)"
+                      @click="goQuestion(record.id, $event)"
                     >
                       去做题
                     </a-button>
@@ -120,7 +123,10 @@
                   </template>
                   <template #item="{ item }">
                     <a-list-item class="list-item">
-                      <div class="list-title" @click="goPostDetail(item.id)">
+                      <div
+                        class="list-title"
+                        @click="goPostDetail(item.id, $event)"
+                      >
                         {{ item.title || "无标题帖子" }}
                       </div>
                       <div class="list-content">{{ item.content }}</div>
@@ -147,6 +153,7 @@ import {
   QuestionControllerService,
   UserControllerService,
 } from "../../../generated";
+import { openPage, shouldOpenInNewTab } from "@/utils/navigation";
 
 const route = useRoute();
 const router = useRouter();
@@ -229,12 +236,16 @@ const formatTime = (time?: string) => {
   return date.toLocaleString("zh-CN", { hour12: false });
 };
 
-const goPostDetail = (postId: string | number) => {
-  router.push(`/post/${postId}`);
+const goPostDetail = (postId: string | number, event?: MouseEvent) => {
+  return openPage(router, `/post/${postId}`, {
+    newTab: shouldOpenInNewTab(event),
+  });
 };
 
-const goQuestion = (questionId: string | number) => {
-  router.push(`/view/question/${questionId}`);
+const goQuestion = (questionId: string | number, event?: MouseEvent) => {
+  return openPage(router, `/view/question/${questionId}`, {
+    newTab: shouldOpenInNewTab(event),
+  });
 };
 
 const loadUserInfo = async () => {
