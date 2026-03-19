@@ -1,10 +1,16 @@
 package sjj.oj.codesandbox.controller;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import sjj.oj.codesandbox.model.ExecuteCodeRequest;
 import sjj.oj.codesandbox.model.ExecuteCodeResponse;
 import sjj.oj.codesandbox.model.enums.QuestionSubmitStatusEnum;
 import sjj.oj.codesandbox.model.enums.SupportLanguageEnum;
+import sjj.oj.codesandbox.service.c.CNativeCodeSandbox;
+import sjj.oj.codesandbox.service.cpp.CppNativeCodeSandbox;
 import sjj.oj.codesandbox.service.java.JavaNativeCodeSandbox;
 import sjj.oj.codesandbox.service.python3.Python3Native3CodeSandbox;
 
@@ -13,92 +19,77 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * @version 1.0
- * @Author SJJ
+ * Code sandbox HTTP entry.
  */
 @RestController
 @RequestMapping("/codesandbox")
 public class MainController
 {
-
-    /**
-     * 定义鉴权请求头
-     */
     private static final String AUTH_REQUEST_HEADER = "oj-codesandbox-auth-by-sjj";
-
-    /**
-     * 定义鉴权请求头中的密钥
-     */
     private static final String AUTH_REQUEST_SECRET = "$W$~vrZwe7z&L!ht^U%fF2zZzHTjWSwY%@ZeEJ^*(qZ()D3npx";
 
     @Resource
     private JavaNativeCodeSandbox javaNativeCodeSandbox;
+
     @Resource
     private Python3Native3CodeSandbox python3NativeCodeSandbox;
 
-    /**
-     * 检测系统健康状态
-     *
-     * @return
-     */
+    @Resource
+    private CNativeCodeSandbox cNativeCodeSandbox;
+
+    @Resource
+    private CppNativeCodeSandbox cppNativeCodeSandbox;
+
     @GetMapping("/healthCheck")
     public String healthCheck()
     {
         return "I'm fine";
     }
 
-    /**
-     * 系统自我介绍
-     *
-     * @return
-     */
     @GetMapping("/intro")
     public String selfIntroduction()
     {
-        return "您好，我是由【SJJ】开发的代码沙箱，可完成代码的运行和结果返回。\n" +
-                "目前我支持的语言有"+SupportLanguageEnum.getValues()+"\n"+
-                "如果对您有帮助，欢迎来我主页点个关注~\n" +
-                "作者Gitee："+"https://gitee.com/crsjj"+
-                "\n作者B站主页："+"https://space.bilibili.com/1198127286?spm_id_from=333.788.0.0"+"\n"+
-                "PS：本项目原始代码源于【程序员鱼皮】，再次特别鸣谢~";
+        return "Supported languages: " + SupportLanguageEnum.getValues();
     }
 
-    /**
-     * 执行代码
-     *
-     * @param executeCodeRequest
-     * @param request
-     * @param response
-     * @return
-     */
     @PostMapping("/run")
-    public ExecuteCodeResponse runCode(@RequestBody ExecuteCodeRequest executeCodeRequest, HttpServletRequest request, HttpServletResponse response)
+    public ExecuteCodeResponse runCode(@RequestBody ExecuteCodeRequest executeCodeRequest,
+                                       HttpServletRequest request,
+                                       HttpServletResponse response)
     {
-        // 基本的认证
         String authHeader = request.getHeader(AUTH_REQUEST_HEADER);
         if (!AUTH_REQUEST_SECRET.equals(authHeader))
         {
-            System.out.println(AUTH_REQUEST_SECRET.length());
             response.setStatus(403);
-            return new ExecuteCodeResponse(null, "身份校验失败！", QuestionSubmitStatusEnum.FAILED.getValue(), null);
+            return new ExecuteCodeResponse(null, "Authentication failed", QuestionSubmitStatusEnum.FAILED.getValue(), null);
         }
         if (executeCodeRequest == null)
         {
-            throw new RuntimeException("请求参数为空");
+            throw new RuntimeException("Request body is empty");
         }
+
         String language = executeCodeRequest.getLanguage();
         if (SupportLanguageEnum.JAVA.getValue().equals(language))
         {
             return javaNativeCodeSandbox.executeCode(executeCodeRequest);
         }
-        else if (SupportLanguageEnum.PYTHON3.getValue().equals(language))
+        if (SupportLanguageEnum.PYTHON3.getValue().equals(language))
         {
             return python3NativeCodeSandbox.executeCode(executeCodeRequest);
         }
-        else
+        if (SupportLanguageEnum.C.getValue().equals(language))
         {
-            return new ExecuteCodeResponse(null, "不支持的编程语言：" + language + "；当前仅支持：" + SupportLanguageEnum.getValues(), QuestionSubmitStatusEnum.FAILED.getValue(), null);
+            return cNativeCodeSandbox.executeCode(executeCodeRequest);
         }
+        if (SupportLanguageEnum.CPP.getValue().equals(language))
+        {
+            return cppNativeCodeSandbox.executeCode(executeCodeRequest);
+        }
+        return new ExecuteCodeResponse(
+                null,
+                "Unsupported language: " + language + "; supported: " + SupportLanguageEnum.getValues(),
+                QuestionSubmitStatusEnum.FAILED.getValue(),
+                null
+        );
     }
-
 }

@@ -25,3 +25,7 @@ spring:
     uris: http://localhost:9200
     username: root
     password: 123456
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true

@@ -8,14 +8,11 @@
     </a-button>
     <a-card class="profile-header" :bordered="false">
       <div class="profile-main">
-        <div
-          class="avatar-edit-wrapper avatar-large"
-          @click="triggerAvatarUpload"
-        >
+        <div class="avatar-edit-wrapper avatar-large" @click="goMyProfile">
           <a-tooltip content="编辑头像" position="top">
             <div class="avatar-clickable">
               <img class="avatar-image" :src="displayAvatar" alt="用户头像" />
-              <div class="avatar-overlay">
+              <div class="avatar-overlay" @click.stop="triggerAvatarUpload">
                 <icon-edit class="edit-icon" />
               </div>
             </div>
@@ -33,10 +30,7 @@
         <div class="info-item">
           <span class="label">用户头像</span>
           <div class="value avatar-value">
-            <div
-              class="avatar-edit-wrapper avatar-small"
-              @click="triggerAvatarUpload"
-            >
+            <div class="avatar-edit-wrapper avatar-small" @click="goMyProfile">
               <a-tooltip content="编辑头像" position="top">
                 <div class="avatar-clickable">
                   <img
@@ -44,7 +38,7 @@
                     :src="displayAvatar"
                     alt="用户头像"
                   />
-                  <div class="avatar-overlay">
+                  <div class="avatar-overlay" @click.stop="triggerAvatarUpload">
                     <icon-edit class="edit-icon" />
                   </div>
                 </div>
@@ -237,6 +231,7 @@ const router = useRouter();
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 
 const userInfo = reactive({
+  id: "",
   userAvatar: "",
   userName: "",
   userAccount: "",
@@ -297,6 +292,13 @@ const goHome = () => {
   router.push("/");
 };
 
+const goMyProfile = () => {
+  if (!userInfo.id) {
+    return;
+  }
+  router.push(`/user/${userInfo.id}`);
+};
+
 const loadUserInfo = async () => {
   // 预留获取用户信息接口位置
   const res = await UserControllerService.getLoginUserUsingGet();
@@ -304,6 +306,7 @@ const loadUserInfo = async () => {
     Message.error("获取用户信息失败");
     return;
   }
+  userInfo.id = String(res.data.id || "");
   userInfo.userAvatar = res.data.userAvatar || "";
   userInfo.userName = res.data.userName || "";
   userInfo.userAccount = res.data.userAccount || "";

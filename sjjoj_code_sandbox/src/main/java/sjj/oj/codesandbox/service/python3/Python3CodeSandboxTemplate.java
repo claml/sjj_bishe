@@ -213,7 +213,7 @@ public abstract class Python3CodeSandboxTemplate extends CommonCodeSandboxTempla
             System.out.println("安全控制后的代码：\n" + code);
         }
         // 1. 把用户的代码保存为文件
-        File userCodeFile = saveCodeToFile(code, GLOBAL_CODE_DIR_NAME, GLOBAL_CODE_DIR_NAME);
+        File userCodeFile = saveCodeToFile(code, GLOBAL_CODE_DIR_NAME, GLOBAL_PYTHON_FILE_NAME);
 
         // 2. 执行代码，得到输出结果
         List<ExecuteMessage> executeMessageList = runFile(userCodeFile, inputList);

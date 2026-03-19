@@ -1,10 +1,11 @@
-<template>
+﻿<template>
   <a-dropdown trigger="click" position="br">
     <div class="user-menu-trigger">
       <img
         class="user-avatar"
         :src="displayAvatar"
         :alt="`${displayName} 的头像`"
+        @click.stop="goToMyProfile"
       />
       <span class="user-name">{{ displayName }}</span>
       <span class="arrow-down">▼</span>
@@ -29,20 +30,16 @@ const store = useStore();
 const router = useRouter();
 
 onMounted(() => {
-  // 获取当前用户信息接口（真实接口）
   store.dispatch("user/getLoginUser");
 });
 
 const loginUser = computed(() => store.state.user?.loginUser ?? {});
-
 const displayName = computed(() => loginUser.value.userName || "未登录");
-
 const displayAvatar = computed(
   () => loginUser.value.userAvatar || defaultAvatar
 );
 
 const goToAccountInfo = async () => {
-  // 跳转账号信息页接口
   await router.push({ path: "/user/account" });
 };
 
@@ -56,7 +53,6 @@ const goToMyProfile = async () => {
 };
 
 const logout = async () => {
-  // 退出登录方法接口
   await UserControllerService.userLogoutUsingPost();
   store.commit("user/updateUser", {
     userName: "未登录",
@@ -72,8 +68,8 @@ const logout = async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 10px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -83,8 +79,8 @@ const logout = async () => {
 }
 
 .user-avatar {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #e9e9e9;
@@ -93,7 +89,8 @@ const logout = async () => {
 
 .user-name {
   color: #4e5969;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
   line-height: 1;
   max-width: 110px;
   white-space: nowrap;

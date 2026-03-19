@@ -2,6 +2,8 @@ package com.sjj.oj_backend.judge.codesandbox.model;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 判题信息
  */
@@ -22,4 +24,9 @@ public class JudgeInfo {
      * 消耗时间（KB）
      */
     private Long time;
+
+    /**
+     * Program outputs for each test case input.
+     */
+    private List<String> outputList;
 }

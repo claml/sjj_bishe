@@ -16,11 +16,15 @@ public class CodeSandboxFactory {
      * @return
      */
     public static CodeSandbox newInstance(String type) {
+        return newInstance(type, null, null, null);
+    }
+
+    public static CodeSandbox newInstance(String type, String remoteUrl, String authHeaderName, String authSecret) {
         switch (type) {
             case "example":
                 return new ExampleCodeSandbox();
             case "remote":
-                return new RemoteCodeSandbox();
+                return new RemoteCodeSandbox(remoteUrl, authHeaderName, authSecret);
             case "thirdParty":
                 return new ThirdPartyCodeSandbox();
             default:

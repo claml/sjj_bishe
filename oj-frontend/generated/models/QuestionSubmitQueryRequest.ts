@@ -5,6 +5,7 @@
 
 export type QuestionSubmitQueryRequest = {
     current?: number;
+    id?: number;
     language?: string;
     pageSize?: number;
     questionId?: number;

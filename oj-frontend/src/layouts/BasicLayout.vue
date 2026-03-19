@@ -1,6 +1,6 @@
 <template>
   <div id="basicLayout">
-    <a-layout style="min-height: 100vh">
+    <a-layout class="main-layout">
       <a-layout-header class="header">
         <GlobalHeader />
       </a-layout-header>
@@ -16,14 +16,26 @@
 
 <style scoped>
 #basicLayout {
+  min-height: 100vh;
+}
+
+#basicLayout .main-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 #basicLayout .header {
   margin-bottom: 16px;
-  box-shadow: #eee 1px 1px 5px;
+  height: 72px;
+  padding: 0 20px;
+  background: #f5f6f7;
+  border-bottom: 1px solid #e5e6eb;
+  box-shadow: none;
 }
 
 #basicLayout .content {
+  flex: 1;
   background: linear-gradient(to right, #fefefe, #fff);
   margin-bottom: 16px;
   padding: 20px;
@@ -32,10 +44,6 @@
 #basicLayout .footer {
   background: #efefef;
   padding: 16px;
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
   text-align: center;
 }
 </style>

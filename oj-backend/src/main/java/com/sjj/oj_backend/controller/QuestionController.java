@@ -11,14 +11,18 @@ import com.sjj.oj_backend.constant.UserConstant;
 import com.sjj.oj_backend.exception.BusinessException;
 import com.sjj.oj_backend.exception.ThrowUtils;
 import com.sjj.oj_backend.model.dto.question.*;
-import com.sjj.oj_backend.model.dto.user.UserQueryRequest;
+import com.sjj.oj_backend.model.entity.Contest;
+import com.sjj.oj_backend.model.entity.ContestQuestion;
+import com.sjj.oj_backend.model.entity.ContestUser;
 import com.sjj.oj_backend.model.entity.Question;
 import com.sjj.oj_backend.model.entity.User;
 import com.sjj.oj_backend.model.vo.QuestionVO;
+import com.sjj.oj_backend.service.ContestQuestionService;
+import com.sjj.oj_backend.service.ContestService;
+import com.sjj.oj_backend.service.ContestUserService;
 import com.sjj.oj_backend.service.QuestionService;
 import com.sjj.oj_backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.weaver.patterns.TypePatternQuestions;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +31,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 /**
  * 题目接口
@@ -44,6 +49,15 @@ public class QuestionController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private ContestService contestService;
+
+    @Resource
+    private ContestQuestionService contestQuestionService;
+
+    @Resource
+    private ContestUserService contestUserService;
+
     private final static Gson GSON = new Gson();
 
     // region 增删改查
@@ -56,6 +70,7 @@ public class QuestionController {
      * @return
      */
     @PostMapping("/add")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest, HttpServletRequest request) {
         if (questionAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -176,13 +191,37 @@ public class QuestionController {
      * @return
      */
     @GetMapping("/get/vo")
-    public BaseResponse<QuestionVO> getQuestionVOById(long id, HttpServletRequest request) {
+    public BaseResponse<QuestionVO> getQuestionVOById(long id, Long contestId, HttpServletRequest request) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Question question = questionService.getById(id);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        if (contestId != null) {
+            ThrowUtils.throwIf(contestId <= 0, ErrorCode.PARAMS_ERROR);
+            Contest contest = contestService.getById(contestId);
+            ThrowUtils.throwIf(contest == null, ErrorCode.NOT_FOUND_ERROR, "竞赛不存在");
+
+            QueryWrapper<ContestQuestion> contestQuestionQueryWrapper = new QueryWrapper<>();
+            contestQuestionQueryWrapper.eq("contestId", contestId);
+            contestQuestionQueryWrapper.eq("questionId", id);
+            contestQuestionQueryWrapper.eq("isDelete", false);
+            ThrowUtils.throwIf(contestQuestionService.count(contestQuestionQueryWrapper) <= 0,
+                    ErrorCode.NO_AUTH_ERROR, "题目不在该竞赛中");
+
+            User loginUser = userService.getLoginUserPermitNull(request);
+            boolean isAdmin = userService.isAdmin(loginUser);
+            String contestStatus = contestService.getContestStatus(contest);
+            if (!isAdmin && "running".equals(contestStatus)) {
+                ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+                QueryWrapper<ContestUser> contestUserQueryWrapper = new QueryWrapper<>();
+                contestUserQueryWrapper.eq("contestId", contestId);
+                contestUserQueryWrapper.eq("userId", loginUser.getId());
+                ThrowUtils.throwIf(contestUserService.count(contestUserQueryWrapper) <= 0,
+                        ErrorCode.NO_AUTH_ERROR, "请先参加竞赛再做题");
+            }
         }
         return ResultUtils.success(questionService.getQuestionVO(question, request));
     }

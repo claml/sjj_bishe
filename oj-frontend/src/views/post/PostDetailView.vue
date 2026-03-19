@@ -34,13 +34,13 @@
               :size="42"
               :image-url="postDetail.user?.userAvatar"
               class="clickable-user"
-              @click="goUserProfile(postDetail.userId)"
+              @click="goUserProfile(postDetail.userId, $event)"
               >{{ postDetail.user?.userName?.[0] }}</a-avatar
             >
             <div>
               <div
                 class="user-name clickable-user"
-                @click="goUserProfile(postDetail.userId)"
+                @click="goUserProfile(postDetail.userId, $event)"
               >
                 {{ postDetail.user?.userName || "匿名用户" }}
               </div>
@@ -74,11 +74,11 @@
 
           <a-space class="action-text" size="large">
             <a-button type="text" size="small" @click="doThumb"
-              >👍 {{ postDetail.thumbNum || 0 }}</a-button
+              >点赞 {{ postDetail.thumbNum || 0 }}</a-button
             >
             <span>评论 {{ commentTotal }}</span>
             <a-button type="text" size="small" @click="doFavour"
-              >⭐ {{ postDetail.favourNum || 0 }}</a-button
+              >收藏 {{ postDetail.favourNum || 0 }}</a-button
             >
           </a-space>
         </a-card>
@@ -106,14 +106,27 @@
                 :key="comment.id"
                 class="comment-item"
               >
-                <a-avatar :size="32" :image-url="comment.user?.userAvatar">{{
-                  comment.user?.userName?.[0]
-                }}</a-avatar>
+                <a-avatar
+                  :size="32"
+                  :image-url="comment.user?.userAvatar"
+                  class="clickable-user"
+                  @click="
+                    goUserProfile(comment.userId || comment.user?.id, $event)
+                  "
+                  >{{ comment.user?.userName?.[0] }}</a-avatar
+                >
                 <div class="comment-main">
                   <div class="comment-meta">
-                    <span class="comment-user">{{
-                      comment.user?.userName || "匿名用户"
-                    }}</span>
+                    <span
+                      class="comment-user clickable-user"
+                      @click="
+                        goUserProfile(
+                          comment.userId || comment.user?.id,
+                          $event
+                        )
+                      "
+                      >{{ comment.user?.userName || "匿名用户" }}</span
+                    >
                     <span class="comment-time">{{
                       formatTime(comment.createTime)
                     }}</span>
@@ -150,6 +163,7 @@ import {
   getPostDetail,
   listPostComments,
 } from "@/services/postApi";
+import { openPage, shouldOpenInNewTab } from "@/utils/navigation";
 
 const route = useRoute();
 const router = useRouter();
@@ -201,11 +215,13 @@ const goDiscussion = () => {
   router.push("/discussion");
 };
 
-const goUserProfile = (userId: string | number) => {
+const goUserProfile = (userId: string | number, event?: MouseEvent) => {
   if (!userId) {
     return;
   }
-  router.push(`/user/${userId}`);
+  return openPage(router, `/user/${userId}`, {
+    newTab: shouldOpenInNewTab(event),
+  });
 };
 
 const loadPostDetail = async () => {
@@ -217,7 +233,7 @@ const loadPostDetail = async () => {
   loading.value = true;
   loadError.value = false;
   try {
-    const detail = await getPostDetail(Number(postId.value));
+    const detail = await getPostDetail(postId.value);
     postDetail.value = normalizePost(detail);
     await loadComments();
   } catch (error) {
@@ -233,7 +249,7 @@ const loadPostDetail = async () => {
 const loadComments = async () => {
   commentLoading.value = true;
   try {
-    const pageData = await listPostComments(Number(postId.value));
+    const pageData = await listPostComments(postId.value);
     commentList.value = pageData.records || [];
     commentTotal.value = Number(pageData.total) || commentList.value.length;
   } catch (error) {
@@ -255,7 +271,7 @@ const submitComment = async () => {
   }
   submittingComment.value = true;
   try {
-    await addPostComment(Number(postId.value), content);
+    await addPostComment(postId.value, content);
     commentInput.value = "";
     message.success("评论成功");
     await loadComments();
@@ -301,7 +317,7 @@ const doFavour = async () => {
 const confirmDeletePost = () => {
   Modal.confirm({
     title: "确认删除",
-    content: "确定删除这条帖子吗？删除后不可恢复",
+    content: "确定删除这条帖子吗？删除后不可恢复。",
     okText: "确认删除",
     cancelText: "取消",
     okButtonProps: {
@@ -309,7 +325,7 @@ const confirmDeletePost = () => {
     },
     onOk: async () => {
       try {
-        await deletePost(Number(postId.value));
+        await deletePost(postId.value);
         message.success("删除成功");
         await router.push("/discussion");
       } catch (error) {

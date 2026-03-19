@@ -8,22 +8,28 @@ import com.sjj.oj_backend.judge.codesandbox.CodeSandboxFactory;
 import com.sjj.oj_backend.judge.codesandbox.CodeSandboxProxy;
 import com.sjj.oj_backend.judge.codesandbox.model.ExecuteCodeRequest;
 import com.sjj.oj_backend.judge.codesandbox.model.ExecuteCodeResponse;
-import com.sjj.oj_backend.judge.strategy.JudgeContext;
-import com.sjj.oj_backend.model.dto.question.JudgeCase;
 import com.sjj.oj_backend.judge.codesandbox.model.JudgeInfo;
+import com.sjj.oj_backend.judge.strategy.JudgeContext;
+import com.sjj.oj_backend.mapper.QuestionMapper;
+import com.sjj.oj_backend.model.dto.question.JudgeCase;
 import com.sjj.oj_backend.model.entity.Question;
 import com.sjj.oj_backend.model.entity.QuestionSubmit;
+import com.sjj.oj_backend.model.enums.JudgeInfoMessageEnum;
 import com.sjj.oj_backend.model.enums.QuestionSubmitStatusEnum;
 import com.sjj.oj_backend.service.QuestionService;
 import com.sjj.oj_backend.service.QuestionSubmitService;
+import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class JudgeServiceImpl implements JudgeService {
 
     @Resource
@@ -33,42 +39,53 @@ public class JudgeServiceImpl implements JudgeService {
     private QuestionSubmitService questionSubmitService;
 
     @Resource
+    private QuestionMapper questionMapper;
+
+    @Resource
     private JudgeManager judgeManager;
 
     @Value("${codesandbox.type:example}")
     private String type;
-
+    @Value("${codesandbox.remote.url:http://127.0.0.1:8090/codesandbox/run}")
+    private String remoteUrl;
+    @Value("${codesandbox.remote.auth-header:oj-codesandbox-auth-by-sjj}")
+    private String remoteAuthHeader;
+    @Value("${codesandbox.remote.auth-secret:$W$~vrZwe7z&L!ht^U%fF2zZzHTjWSwY%@ZeEJ^*(qZ()D3npx}")
+    private String remoteAuthSecret;
 
     @Override
     public QuestionSubmit doJudge(long questionSubmitId) {
-        // 1）传入题目的提交 id，获取到对应的题目、提交信息（包含代码、编程语言等）
         QuestionSubmit questionSubmit = questionSubmitService.getById(questionSubmitId);
         if (questionSubmit == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "提交信息不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "Submit record not found");
         }
+
         Long questionId = questionSubmit.getQuestionId();
         Question question = questionService.getById(questionId);
         if (question == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "Question not found");
         }
-        // 2）如果题目提交状态不为等待中，就不用重复执行了
+
         if (!questionSubmit.getStatus().equals(QuestionSubmitStatusEnum.WAITING.getValue())) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "题目正在判题中");
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "Submit is already judging");
         }
-        // 3）更改判题（题目提交）的状态为 “判题中”，防止重复执行
+
         QuestionSubmit questionSubmitUpdate = new QuestionSubmit();
         questionSubmitUpdate.setId(questionSubmitId);
         questionSubmitUpdate.setStatus(QuestionSubmitStatusEnum.RUNNING.getValue());
+        JudgeInfo runningJudgeInfo = new JudgeInfo();
+        runningJudgeInfo.setMessage("Running");
+        runningJudgeInfo.setOutputList(new ArrayList<>());
+        questionSubmitUpdate.setJudgeInfo(JSONUtil.toJsonStr(runningJudgeInfo));
         boolean update = questionSubmitService.updateById(questionSubmitUpdate);
         if (!update) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "题目状态更新错误");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Failed to update submit status");
         }
-        // 4）调用沙箱，获取到执行结果
-        CodeSandbox codeSandbox = CodeSandboxFactory.newInstance(type);
+
+        CodeSandbox codeSandbox = CodeSandboxFactory.newInstance(type, remoteUrl, remoteAuthHeader, remoteAuthSecret);
         codeSandbox = new CodeSandboxProxy(codeSandbox);
         String language = questionSubmit.getLanguage();
         String code = questionSubmit.getCode();
-        // 获取输入用例
         String judgeCaseStr = question.getJudgeCase();
         List<JudgeCase> judgeCaseList = JSONUtil.toList(judgeCaseStr, JudgeCase.class);
         List<String> inputList = judgeCaseList.stream().map(JudgeCase::getInput).collect(Collectors.toList());
@@ -78,26 +95,78 @@ public class JudgeServiceImpl implements JudgeService {
                 .inputList(inputList)
                 .build();
         ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
+        if (executeCodeResponse == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Code sandbox returned null response");
+        }
+
+        if (!QuestionSubmitStatusEnum.SUCCEED.getValue().equals(executeCodeResponse.getStatus())) {
+            JudgeInfo failedJudgeInfo = new JudgeInfo();
+            JudgeInfo sandboxJudgeInfo = executeCodeResponse.getJudgeInfo();
+            if (sandboxJudgeInfo != null) {
+                failedJudgeInfo.setTime(sandboxJudgeInfo.getTime());
+                failedJudgeInfo.setMemory(sandboxJudgeInfo.getMemory());
+                failedJudgeInfo.setMessage(sandboxJudgeInfo.getMessage());
+            }
+            List<String> failedOutputList = executeCodeResponse.getOutputList();
+            if (failedOutputList == null) {
+                failedOutputList = new ArrayList<>();
+            }
+            failedJudgeInfo.setOutputList(failedOutputList);
+            if (StringUtils.isBlank(failedJudgeInfo.getMessage())) {
+                failedJudgeInfo.setMessage(StringUtils.defaultIfBlank(executeCodeResponse.getMessage(), "Runtime Error"));
+            }
+            questionSubmitUpdate = new QuestionSubmit();
+            questionSubmitUpdate.setId(questionSubmitId);
+            questionSubmitUpdate.setStatus(QuestionSubmitStatusEnum.FAILED.getValue());
+            questionSubmitUpdate.setJudgeInfo(JSONUtil.toJsonStr(failedJudgeInfo));
+            update = questionSubmitService.updateById(questionSubmitUpdate);
+            if (!update) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Failed to save judge result");
+            }
+            return questionSubmitService.getById(questionSubmitId);
+        }
+
         List<String> outputList = executeCodeResponse.getOutputList();
-        // 5）根据沙箱的执行结果，设置题目的判题状态和信息
+        if (outputList == null) {
+            outputList = new ArrayList<>();
+        }
+
+        JudgeInfo sandboxJudgeInfo = executeCodeResponse.getJudgeInfo();
+        if (sandboxJudgeInfo == null) {
+            sandboxJudgeInfo = new JudgeInfo();
+        }
         JudgeContext judgeContext = new JudgeContext();
-        judgeContext.setJudgeInfo(executeCodeResponse.getJudgeInfo());
+        judgeContext.setJudgeInfo(sandboxJudgeInfo);
         judgeContext.setInputList(inputList);
         judgeContext.setOutputList(outputList);
         judgeContext.setJudgeCaseList(judgeCaseList);
         judgeContext.setQuestion(question);
         judgeContext.setQuestionSubmit(questionSubmit);
         JudgeInfo judgeInfo = judgeManager.doJudge(judgeContext);
-        // 6）修改数据库中的判题结果
+        judgeInfo.setOutputList(outputList);
+
         questionSubmitUpdate = new QuestionSubmit();
         questionSubmitUpdate.setId(questionSubmitId);
         questionSubmitUpdate.setStatus(QuestionSubmitStatusEnum.SUCCEED.getValue());
         questionSubmitUpdate.setJudgeInfo(JSONUtil.toJsonStr(judgeInfo));
         update = questionSubmitService.updateById(questionSubmitUpdate);
         if (!update) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "题目状态更新错误");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Failed to save judge result");
         }
-        QuestionSubmit questionSubmitResult = questionSubmitService.getById(questionId);
-        return questionSubmitResult;
+        if (isAcceptedResult(judgeInfo)) {
+            int increaseAcceptedResult = questionMapper.increaseAcceptedNum(questionId);
+            if (increaseAcceptedResult <= 0) {
+                log.error("Failed to increase question accepted count, questionId={}", questionId);
+            }
+        }
+
+        return questionSubmitService.getById(questionSubmitId);
+    }
+
+    private boolean isAcceptedResult(JudgeInfo judgeInfo) {
+        if (judgeInfo == null || StringUtils.isBlank(judgeInfo.getMessage())) {
+            return false;
+        }
+        return JudgeInfoMessageEnum.ACCEPTED.getValue().equals(judgeInfo.getMessage());
     }
 }

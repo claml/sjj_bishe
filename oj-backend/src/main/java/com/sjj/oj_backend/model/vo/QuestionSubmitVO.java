@@ -4,9 +4,11 @@ import cn.hutool.json.JSONUtil;
 import com.sjj.oj_backend.judge.codesandbox.model.JudgeInfo;
 import com.sjj.oj_backend.model.entity.QuestionSubmit;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -101,8 +103,34 @@ public class QuestionSubmitVO implements Serializable {
         }
         QuestionSubmitVO questionSubmitVO = new QuestionSubmitVO();
         BeanUtils.copyProperties(questionSubmit, questionSubmitVO);
+        JudgeInfo judgeInfo = new JudgeInfo();
         String judgeInfoStr = questionSubmit.getJudgeInfo();
-        questionSubmitVO.setJudgeInfo(JSONUtil.toBean(judgeInfoStr, JudgeInfo.class));
+        if (StringUtils.isNotBlank(judgeInfoStr)) {
+            try {
+                JudgeInfo parsedJudgeInfo = JSONUtil.toBean(judgeInfoStr, JudgeInfo.class);
+                if (parsedJudgeInfo != null) {
+                    judgeInfo = parsedJudgeInfo;
+                }
+            } catch (Exception ignored) {
+                // Keep default value for compatibility with malformed historical data.
+            }
+        }
+        if (judgeInfo.getOutputList() == null) {
+            judgeInfo.setOutputList(new ArrayList<>());
+        }
+        if (StringUtils.isBlank(judgeInfo.getMessage())) {
+            Integer status = questionSubmitVO.getStatus();
+            if (status != null) {
+                if (status == 0) {
+                    judgeInfo.setMessage("Waiting");
+                } else if (status == 1) {
+                    judgeInfo.setMessage("Running");
+                } else if (status == 3) {
+                    judgeInfo.setMessage("Failed");
+                }
+            }
+        }
+        questionSubmitVO.setJudgeInfo(judgeInfo);
         return questionSubmitVO;
     }
 

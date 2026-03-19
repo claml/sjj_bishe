@@ -10,9 +10,6 @@ module.exports = defineConfig({
       "^/api": {
         target: backendTarget,
         changeOrigin: true,
-        pathRewrite: {
-          "^/api": "",
-        },
       },
     },
   },

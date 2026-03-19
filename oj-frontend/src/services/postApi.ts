@@ -1,11 +1,12 @@
 import axios from "axios";
-import { PostControllerService, type DeleteRequest } from "../../generated";
 
 interface BaseResponse<T> {
   code: number;
   data: T;
   message?: string;
 }
+
+type PostId = string;
 
 const unwrapResponse = <T>(res: BaseResponse<T>, defaultMessage: string): T => {
   if (res.code !== 0) {
@@ -14,30 +15,33 @@ const unwrapResponse = <T>(res: BaseResponse<T>, defaultMessage: string): T => {
   return res.data;
 };
 
-export const getPostDetail = async (id: number) => {
-  const res = await PostControllerService.getPostVoByIdUsingGet(id);
-  return unwrapResponse(res as BaseResponse<any>, "帖子加载失败");
+export const getPostDetail = async (id: PostId) => {
+  const { data } = await axios.get<BaseResponse<any>>("/api/post/get/vo", {
+    params: { id },
+  });
+  return unwrapResponse(data, "帖子加载失败");
 };
 
-export const deletePost = async (id: number) => {
-  const req: DeleteRequest = { id };
-  const res = await PostControllerService.deletePostUsingPost(req);
-  return unwrapResponse(res as BaseResponse<boolean>, "删除失败");
+export const deletePost = async (id: PostId) => {
+  const { data } = await axios.post<BaseResponse<boolean>>("/api/post/delete", {
+    id,
+  });
+  return unwrapResponse(data, "删除失败");
 };
 
-export const listPostComments = async (postId: number) => {
+export const listPostComments = async (postId: PostId) => {
   const { data } = await axios.post<BaseResponse<any>>(
     "/api/post_comment/list/page/vo",
     {
       postId,
       current: 1,
-      pageSize: 100,
+      pageSize: 20,
     }
   );
   return unwrapResponse(data, "评论加载失败");
 };
 
-export const addPostComment = async (postId: number, content: string) => {
+export const addPostComment = async (postId: PostId, content: string) => {
   const { data } = await axios.post<BaseResponse<number>>(
     "/api/post_comment/add",
     {

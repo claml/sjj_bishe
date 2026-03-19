@@ -112,17 +112,20 @@ id?: number,
     /**
      * getQuestionVOById
      * @param id id
+     * @param contestId contestId
      * @returns BaseResponse_QuestionVO_ OK
      * @throws ApiError
      */
     public static getQuestionVoByIdUsingGet(
 id?: number,
+contestId?: number | string,
 ): CancelablePromise<BaseResponse_QuestionVO_> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/question/get/vo',
             query: {
                 'id': id,
+                'contestId': contestId,
             },
             errors: {
                 401: `Unauthorized`,

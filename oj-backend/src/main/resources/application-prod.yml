@@ -25,6 +25,10 @@ spring:
     uris: http://localhost:9200
     username: root
     password: 123456
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
 mybatis-plus:
   configuration:
     # 生产环境关闭日志

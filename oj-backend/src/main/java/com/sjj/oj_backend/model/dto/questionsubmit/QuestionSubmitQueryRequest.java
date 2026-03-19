@@ -7,32 +7,43 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
- * 创建请求
+ * Query request
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class QuestionSubmitQueryRequest extends PageRequest implements Serializable {
 
     /**
-     * 编程语言
+     * submit id
+     */
+    private Long id;
+
+    /**
+     * language
      */
     private String language;
 
     /**
-     * 提交状态
+     * submit status
      */
     private Integer status;
 
     /**
-     * 题目 id
+     * question id
      */
     private Long questionId;
 
-
     /**
-     * 用户 id
+     * user id
      */
     private Long userId;
 
+    /**
+     * contest id
+     */
+    private Long contestId;
+
     private static final long serialVersionUID = 1L;
 }
+
+

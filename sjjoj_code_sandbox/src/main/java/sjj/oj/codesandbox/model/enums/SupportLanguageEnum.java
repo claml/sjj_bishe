@@ -13,7 +13,10 @@ import java.util.stream.Collectors;
  */
 public enum SupportLanguageEnum
 {
-    JAVA("Java", "java"), PYTHON3("Python3", "python");
+    JAVA("Java", "java"),
+    PYTHON3("Python3", "python"),
+    C("C", "c"),
+    CPP("C++", "cpp");
 
     private final String text;
 

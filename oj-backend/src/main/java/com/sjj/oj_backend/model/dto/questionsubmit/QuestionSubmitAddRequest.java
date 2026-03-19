@@ -5,25 +5,32 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 创建请求
+ * Create submit request
  */
 @Data
 public class QuestionSubmitAddRequest implements Serializable {
 
     /**
-     * 编程语言
+     * language
      */
     private String language;
 
     /**
-     * 用户代码
+     * user code
      */
     private String code;
 
     /**
-     * 题目 id
+     * question id
      */
     private Long questionId;
 
+    /**
+     * contest id (optional)
+     */
+    private Long contestId;
+
     private static final long serialVersionUID = 1L;
 }
+
+

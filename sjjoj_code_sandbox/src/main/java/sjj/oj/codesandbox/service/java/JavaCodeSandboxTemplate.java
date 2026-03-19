@@ -13,10 +13,15 @@ import sjj.oj.codesandbox.service.CodeSandbox;
 import sjj.oj.codesandbox.service.CommonCodeSandboxTemplate;
 import sjj.oj.codesandbox.utils.ProcessUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Java 代码沙箱模板方法的实现
@@ -208,34 +213,49 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
         {
             // 安全控制：限制资源分配：最大队资源大小：128MB
             // 安全控制：配置安全管理器：java.lang.SecurityManager
-            String runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main %s", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME, inputArgs);
+            String runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME);
             String osName = System.getProperty("os.name").toLowerCase();
             // 如果是Windows系统，支持安全管理器security-manager的创建，反之是Linux则不支持（可能也支持，但作者暂时因时间原因未找出对策，故出此下策）
             if (osName.contains("nix") || osName.contains("nux"))
             {
-                runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
+                runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s Main", userCodeParentPath);
             }
             // String runCmd = String.format("java -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main %s", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME, inputArgs);
             try
             {
                 Process runProcess = Runtime.getRuntime().exec(runCmd);
-                // 安全控制：限制最大运行时间，超时控制
-                new Thread(() ->
+                writeInputToProcess(runProcess, inputArgs);
+                AtomicBoolean timeOut = new AtomicBoolean(false);
+                Thread timeoutWatcher = new Thread(() ->
                 {
                     try
                     {
                         Thread.sleep(TIME_OUT);
-                        System.out.println("超过程序最大运行时间，终止进程");
-                        runProcess.destroy();
+                        if (runProcess.isAlive())
+                        {
+                            timeOut.set(true);
+                            System.out.println("超过程序最大运行时间，终止进程");
+                            runProcess.destroy();
+                        }
                     }
-                    catch (InterruptedException e)
+                    catch (InterruptedException ignored)
                     {
-                        throw new RuntimeException(e);
+                        Thread.currentThread().interrupt();
                     }
-                }).start();
+                });
+                timeoutWatcher.setDaemon(true);
+                timeoutWatcher.start();
                 ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
+                timeoutWatcher.interrupt();
                 System.out.println("本次运行结果：" + executeMessage);
-                if (executeMessage.getExitValue() != 0)
+                if (timeOut.get())
+                {
+                    executeMessage.setExitValue(1);
+                    executeMessage.setMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getText());
+                    executeMessage.setErrorMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getValue());
+                    executeMessage.setTime(TIME_OUT);
+                }
+                else if (executeMessage.getExitValue() != 0)
                 {
                     executeMessage.setExitValue(1);
                     executeMessage.setMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getText());
@@ -254,6 +274,19 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
             }
         }
         return executeMessageList;
+    }
+
+    private void writeInputToProcess(Process runProcess, String inputArgs) throws IOException
+    {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(runProcess.getOutputStream(), StandardCharsets.UTF_8)))
+        {
+            if (inputArgs != null)
+            {
+                writer.write(inputArgs);
+            }
+            writer.newLine();
+            writer.flush();
+        }
     }
 
 

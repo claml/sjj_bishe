@@ -1,9 +1,7 @@
-import { RouteRecordRaw } from "vue-router";
-import HomeView from "@/views/ExampleView.vue";
+﻿import { RouteRecordRaw } from "vue-router";
 import UserLayout from "@/layouts/UserLayout.vue";
 import UserLoginView from "@/views/user/UserLoginView.vue";
 import UserRegisterView from "@/views/user/UserRegisterView.vue";
-import AdminView from "@/views/AdminView.vue";
 import NoAuthView from "@/views/NoAuthView.vue";
 import ACCESS_ENUM from "@/access/accessEnum";
 import AddQuestionView from "@/views/question/AddQuestionView.vue";
@@ -15,6 +13,11 @@ import UserAccountView from "@/views/user/UserAccountView.vue";
 import DiscussionView from "@/views/post/DiscussionView.vue";
 import PostDetailView from "@/views/post/PostDetailView.vue";
 import UserProfileView from "@/views/user/UserProfileView.vue";
+import ContestListView from "@/views/contest/ContestListView.vue";
+import ContestDetailView from "@/views/contest/ContestDetailView.vue";
+import ManageContestView from "@/views/contest/ManageContestView.vue";
+import HomeView from "@/views/HomeView.vue";
+import ManageHomeEventView from "@/views/ManageHomeEventView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -39,13 +42,34 @@ export const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/",
-    name: "主页",
-    component: QuestionsView,
+    name: "首页",
+    component: HomeView,
+    meta: {
+      hideInMenu: true,
+    },
   },
   {
     path: "/questions",
-    name: "浏览题目",
+    name: "题库",
     component: QuestionsView,
+  },
+  {
+    path: "/contests",
+    name: "竞赛",
+    component: ContestListView,
+    meta: {
+      access: ACCESS_ENUM.USER,
+    },
+  },
+  {
+    path: "/contest/:id",
+    name: "竞赛详情",
+    component: ContestDetailView,
+    props: true,
+    meta: {
+      access: ACCESS_ENUM.USER,
+      hideInMenu: true,
+    },
   },
   {
     path: "/view/question/:id",
@@ -62,7 +86,8 @@ export const routes: Array<RouteRecordRaw> = [
     name: "创建题目",
     component: AddQuestionView,
     meta: {
-      access: ACCESS_ENUM.USER,
+      access: ACCESS_ENUM.ADMIN,
+      hideInMenu: true,
     },
   },
   {
@@ -94,7 +119,7 @@ export const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/discussion",
-    name: "讨论",
+    name: "帖子广场",
     component: DiscussionView,
   },
   {
@@ -108,20 +133,28 @@ export const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/manage/question/",
-    name: "管理题目",
+    name: "管理题库",
     component: ManageQuestionView,
     meta: {
       access: ACCESS_ENUM.ADMIN,
     },
   },
-  // {
-  //   path: "/hide",
-  //   name: "隐藏页面",
-  //   component: HomeView,
-  //   meta: {
-  //     hideInMenu: true,
-  //   },
-  // },
+  {
+    path: "/manage/contest",
+    name: "管理竞赛",
+    component: ManageContestView,
+    meta: {
+      access: ACCESS_ENUM.ADMIN,
+    },
+  },
+  {
+    path: "/manage/home-event",
+    name: "管理首页活动",
+    component: ManageHomeEventView,
+    meta: {
+      access: ACCESS_ENUM.ADMIN,
+    },
+  },
   {
     path: "/noAuth",
     name: "无权限",
@@ -130,21 +163,4 @@ export const routes: Array<RouteRecordRaw> = [
       hideInMenu: true,
     },
   },
-  // {
-  //   path: "/admin",
-  //   name: "管理员可见",
-  //   component: AdminView,
-  //   meta: {
-  //     access: ACCESS_ENUM.ADMIN,
-  //   },
-  // },
-  // {
-  //   path: "/about",
-  //   name: "关于我的",
-  //   // route level code-splitting
-  //   // this generates a separate chunk (about.[hash].js) for this route
-  //   // which is lazy-loaded when the route is visited.
-  //   component: () =>
-  //     import(/* webpackChunkName: "about" */ "../views/AboutView.vue"),
-  // },
 ];

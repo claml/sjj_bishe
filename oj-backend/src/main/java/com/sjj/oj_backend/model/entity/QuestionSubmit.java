@@ -3,16 +3,17 @@ package com.sjj.oj_backend.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
 import lombok.Data;
 
+import java.util.Date;
+
 /**
- * 题目提交
- * @TableName question_submit
+ * Question submit
  */
-@TableName(value ="question_submit")
+@TableName(value = "question_submit")
 @Data
 public class QuestionSubmit {
+
     /**
      * id
      */
@@ -20,47 +21,54 @@ public class QuestionSubmit {
     private Long id;
 
     /**
-     * 编程语言
+     * language
      */
     private String language;
 
     /**
-     * 用户代码
+     * user code
      */
     private String code;
 
     /**
-     * 判题信息（json 对象）
+     * judge info (json)
      */
     private String judgeInfo;
 
     /**
-     * 判题状态（0 - 待判题、1 - 判题中、2 - 成功、3 - 失败）
+     * status (0 waiting, 1 running, 2 judged, 3 failed)
      */
     private Integer status;
 
     /**
-     * 题目 id
+     * question id
      */
     private Long questionId;
 
     /**
-     * 创建用户 id
+     * contest id (nullable)
+     */
+    private Long contestId;
+
+    /**
+     * submit user id
      */
     private Long userId;
 
     /**
-     * 创建时间
+     * create time
      */
     private Date createTime;
 
     /**
-     * 更新时间
+     * update time
      */
     private Date updateTime;
 
     /**
-     * 是否删除
+     * logical delete
      */
     private Integer isDelete;
 }
+
+

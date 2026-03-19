@@ -7,6 +7,7 @@ import com.sjj.oj_backend.model.dto.questionsubmit.QuestionSubmitQueryRequest;
 import com.sjj.oj_backend.model.entity.QuestionSubmit;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.sjj.oj_backend.model.entity.User;
+import com.sjj.oj_backend.model.vo.AcceptedQuestionSubmitVO;
 import com.sjj.oj_backend.model.vo.QuestionSubmitVO;
 
 /**
@@ -50,4 +51,14 @@ public interface QuestionSubmitService extends IService<QuestionSubmit> {
      * @return
      */
     Page<QuestionSubmitVO> getQuestionSubmitVOPage(Page<QuestionSubmit> questionSubmitPage, User loginUser);
+
+    /**
+     * List latest accepted submission for each accepted question of a user.
+     *
+     * @param userId user id
+     * @param current page current
+     * @param pageSize page size
+     * @return accepted submission page
+     */
+    Page<AcceptedQuestionSubmitVO> listAcceptedQuestionByUserId(long userId, long current, long pageSize);
 }

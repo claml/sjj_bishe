@@ -34,10 +34,10 @@
               size="large"
             />
           </a-form-item>
-          <a-form-item field="judgeConfig.stackLimit" label="堆栈限制">
+          <a-form-item field="judgeConfig.stackLimit" label="栈限制">
             <a-input-number
               v-model="form.judgeConfig.stackLimit"
-              placeholder="请输入堆栈限制"
+              placeholder="请输入栈限制"
               mode="button"
               min="0"
               size="large"
@@ -45,6 +45,7 @@
           </a-form-item>
         </a-space>
       </a-form-item>
+
       <a-form-item
         label="测试用例配置"
         :content-flex="false"
@@ -58,8 +59,7 @@
           <a-space direction="vertical" style="min-width: 640px">
             <a-form-item
               :field="`form.judgeCase[${index}].input`"
-              :label="`输入用例-${index}`"
-              :key="index"
+              :label="`输入用例-${index + 1}`"
             >
               <a-input
                 v-model="judgeCaseItem.input"
@@ -68,30 +68,30 @@
             </a-form-item>
             <a-form-item
               :field="`form.judgeCase[${index}].output`"
-              :label="`输出用例-${index}`"
-              :key="index"
+              :label="`输出用例-${index + 1}`"
             >
               <a-input
                 v-model="judgeCaseItem.output"
                 placeholder="请输入测试输出用例"
               />
             </a-form-item>
-            <a-button status="danger" @click="handleDelete(index)">
-              删除
-            </a-button>
+            <a-button status="danger" @click="handleDelete(index)"
+              >删除</a-button
+            >
           </a-space>
         </a-form-item>
         <div style="margin-top: 32px">
           <a-button @click="handleAdd" type="outline" status="success"
-            >新增测试用例
-          </a-button>
+            >新增测试用例</a-button
+          >
         </div>
       </a-form-item>
+
       <div style="margin-top: 16px" />
       <a-form-item>
         <a-button type="primary" style="min-width: 200px" @click="doSubmit"
-          >提交
-        </a-button>
+          >提交</a-button
+        >
       </a-form-item>
     </a-form>
   </div>
@@ -100,18 +100,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import MdEditor from "@/components/MdEditor.vue";
-// import { QuestionControllerService } from "../../../generated";
 import message from "@arco-design/web-vue/es/message";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { QuestionControllerService } from "../../../generated/services/QuestionControllerService";
 
 const route = useRoute();
-// 如果页面地址包含 update，视为更新页面
-const updatePage = route.path.includes("update");
+const router = useRouter();
 
-let form = ref({
+const form = ref({
   title: "",
-  tags: [],
+  tags: [] as string[],
   answer: "",
   content: "",
   judgeConfig: {
@@ -127,9 +125,6 @@ let form = ref({
   ],
 });
 
-/**
- * 根据题目 id 获取老的数据
- */
 const loadData = async () => {
   const id = route.query.id;
   if (!id) {
@@ -138,16 +133,10 @@ const loadData = async () => {
   const res = await QuestionControllerService.getQuestionByIdUsingGet(
     id as any
   );
-  if (res.code === 0) {
+  if (res.code === 0 && res.data) {
     form.value = res.data as any;
-    // json 转 js 对象
     if (!form.value.judgeCase) {
-      form.value.judgeCase = [
-        {
-          input: "",
-          output: "",
-        },
-      ];
+      form.value.judgeCase = [{ input: "", output: "" }];
     } else {
       form.value.judgeCase = JSON.parse(form.value.judgeCase as any);
     }
@@ -166,7 +155,7 @@ const loadData = async () => {
       form.value.tags = JSON.parse(form.value.tags as any);
     }
   } else {
-    message.error("加载失败，" + res.message);
+    message.error("加载失败：" + res.message);
   }
 };
 
@@ -175,32 +164,21 @@ onMounted(() => {
 });
 
 const doSubmit = async () => {
-  console.log(form.value);
-  // 区分更新还是创建
-  if (updatePage) {
-    const res = await QuestionControllerService.updateQuestionUsingPost(
-      form.value
-    );
-    if (res.code === 0) {
-      message.success("更新成功");
-    } else {
-      message.error("更新失败，" + res.message);
+  const res = await QuestionControllerService.addQuestionUsingPost(
+    form.value as any
+  );
+  if (res.code === 0) {
+    message.success("创建成功");
+    if (res.data) {
+      await router.push({
+        path: `/view/question/${res.data}`,
+      });
     }
   } else {
-    const res = await QuestionControllerService.addQuestionUsingPost(
-      form.value
-    );
-    if (res.code === 0) {
-      message.success("创建成功");
-    } else {
-      message.error("创建失败，" + res.message);
-    }
+    message.error("创建失败：" + res.message);
   }
 };
 
-/**
- * 新增判题用例
- */
 const handleAdd = () => {
   form.value.judgeCase.push({
     input: "",
@@ -208,9 +186,6 @@ const handleAdd = () => {
   });
 };
 
-/**
- * 删除判题用例
- */
 const handleDelete = (index: number) => {
   form.value.judgeCase.splice(index, 1);
 };
@@ -226,5 +201,7 @@ const onAnswerChange = (value: string) => {
 
 <style scoped>
 #addQuestionView {
+  max-width: 960px;
+  margin: 0 auto;
 }
 </style>

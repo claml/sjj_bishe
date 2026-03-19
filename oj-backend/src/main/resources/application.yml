@@ -38,6 +38,11 @@ spring:
 #    uris: http://localhost:9200
 #    username: root
 #    password: 123456
+  data:
+    elasticsearch:
+      repositories:
+        # 本地开发环境默认关闭 ES Repository 初始化，避免 ES 未启动时应用直接启动失败
+        enabled: false
   # 文件上传
   servlet:
     multipart:
@@ -92,7 +97,11 @@ cos:
     bucket: xxx
 # 代码沙箱配置
 codesandbox:
-  type: example
+  type: remote
+  remote:
+    url: http://192.168.33.128:8090/codesandbox/run
+    auth-header: oj-codesandbox-auth-by-sjj
+    auth-secret: '$W$~vrZwe7z&L!ht^U%fF2zZzHTjWSwY%@ZeEJ^*(qZ()D3npx'
 # 接口文档配置
 knife4j:
   enable: true
