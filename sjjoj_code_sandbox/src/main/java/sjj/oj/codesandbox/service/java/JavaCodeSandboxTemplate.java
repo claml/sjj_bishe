@@ -12,16 +12,17 @@ import sjj.oj.codesandbox.model.enums.QuestionSubmitStatusEnum;
 import sjj.oj.codesandbox.service.CodeSandbox;
 import sjj.oj.codesandbox.service.CommonCodeSandboxTemplate;
 import sjj.oj.codesandbox.utils.ProcessUtils;
-
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Java 代码沙箱模板方法的实现
@@ -204,90 +205,71 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
      * @param inputList
      * @return
      */
-    public List<ExecuteMessage> runFile(File userCodeFile, List<String> inputList)
-    {
-        String userCodeParentPath = userCodeFile.getParentFile().getAbsolutePath();
+    public List<ExecuteMessage> runFile(File userCodeFile, List<String> inputList) {
+	    String userCodeParentPath = userCodeFile.getParentFile().getAbsolutePath();
 
-        List<ExecuteMessage> executeMessageList = new ArrayList<>();
-        for (String inputArgs : inputList)
-        {
-            // 安全控制：限制资源分配：最大队资源大小：128MB
-            // 安全控制：配置安全管理器：java.lang.SecurityManager
-            String runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME);
-            String osName = System.getProperty("os.name").toLowerCase();
-            // 如果是Windows系统，支持安全管理器security-manager的创建，反之是Linux则不支持（可能也支持，但作者暂时因时间原因未找出对策，故出此下策）
-            if (osName.contains("nix") || osName.contains("nux"))
-            {
-                runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s Main", userCodeParentPath);
-            }
-            // String runCmd = String.format("java -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main %s", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME, inputArgs);
-            try
-            {
-                Process runProcess = Runtime.getRuntime().exec(runCmd);
-                writeInputToProcess(runProcess, inputArgs);
-                AtomicBoolean timeOut = new AtomicBoolean(false);
-                Thread timeoutWatcher = new Thread(() ->
-                {
-                    try
-                    {
-                        Thread.sleep(TIME_OUT);
-                        if (runProcess.isAlive())
-                        {
-                            timeOut.set(true);
-                            System.out.println("超过程序最大运行时间，终止进程");
-                            runProcess.destroy();
-                        }
-                    }
-                    catch (InterruptedException ignored)
-                    {
-                        Thread.currentThread().interrupt();
-                    }
-                });
-                timeoutWatcher.setDaemon(true);
-                timeoutWatcher.start();
-                ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
-                timeoutWatcher.interrupt();
-                System.out.println("本次运行结果：" + executeMessage);
-                if (timeOut.get())
-                {
-                    executeMessage.setExitValue(1);
-                    executeMessage.setMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getText());
-                    executeMessage.setErrorMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getValue());
-                    executeMessage.setTime(TIME_OUT);
-                }
-                else if (executeMessage.getExitValue() != 0)
-                {
-                    executeMessage.setExitValue(1);
-                    executeMessage.setMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getText());
-                    executeMessage.setErrorMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getValue());
-                }
-                executeMessageList.add(executeMessage);
-            }
-            catch (Exception e)
-            {
-                // 未知错误
-                ExecuteMessage executeMessage = new ExecuteMessage();
-                executeMessage.setExitValue(1);
-                executeMessage.setMessage(e.getMessage());
-                executeMessage.setErrorMessage(JudgeInfoMessageEnum.SYSTEM_ERROR.getValue());
-                executeMessageList.add(executeMessage);
-            }
-        }
-        return executeMessageList;
-    }
+	    List<ExecuteMessage> executeMessageList = new ArrayList<>();
+	    for (String inputArgs : inputList) {
+		String runCmd = String.format(
+		        "java -Xmx128m -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main",
+		        userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME);
+		String osName = System.getProperty("os.name").toLowerCase();
+		if (osName.contains("nix") || osName.contains("nux")) {
+		    runCmd = String.format("java -Xmx128m -Dfile.encoding=UTF-8 -cp %s Main", userCodeParentPath);
+		}
+		try {
+		    Process runProcess = Runtime.getRuntime().exec(runCmd);
+		    writeInputToProcess(runProcess, inputArgs);
+		    AtomicBoolean timeOut = new AtomicBoolean(false);
+		    Thread timeoutWatcher = new Thread(() -> {
+		        try {
+		            Thread.sleep(TIME_OUT);
+		            if (runProcess.isAlive()) {
+		                timeOut.set(true);
+		                System.out.println("超过程序最大运行时间，终止进程");
+		                runProcess.destroy();
+		            }
+		        } catch (InterruptedException ignored) {
+		            Thread.currentThread().interrupt();
+		        }
+		    });
+		    timeoutWatcher.setDaemon(true);
+		    timeoutWatcher.start();
 
-    private void writeInputToProcess(Process runProcess, String inputArgs) throws IOException
-    {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(runProcess.getOutputStream(), StandardCharsets.UTF_8)))
-        {
-            if (inputArgs != null)
-            {
-                writer.write(inputArgs);
-            }
-            writer.newLine();
-            writer.flush();
-        }
-    }
+		    ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
+		    timeoutWatcher.interrupt();
+		    System.out.println("本次运行结果：" + executeMessage);
+		    if (timeOut.get()) {
+		        executeMessage.setExitValue(1);
+		        executeMessage.setMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getText());
+		        executeMessage.setErrorMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getValue());
+		        executeMessage.setTime(TIME_OUT);
+		    } else if (executeMessage.getExitValue() != 0) {
+		        executeMessage.setExitValue(1);
+		        executeMessage.setMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getText());
+		        executeMessage.setErrorMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getValue());
+		    }
+		    executeMessageList.add(executeMessage);
+		} catch (Exception e) {
+		    ExecuteMessage executeMessage = new ExecuteMessage();
+		    executeMessage.setExitValue(1);
+		    executeMessage.setMessage(e.getMessage());
+		    executeMessage.setErrorMessage(JudgeInfoMessageEnum.SYSTEM_ERROR.getValue());
+		    executeMessageList.add(executeMessage);
+		}
+	    }
+	    return executeMessageList;
+	}
 
+	private void writeInputToProcess(Process runProcess, String inputArgs) throws IOException {
+    		try (BufferedWriter writer = new BufferedWriter(
+            	new OutputStreamWriter(runProcess.getOutputStream(), StandardCharsets.UTF_8))) {
+		if (inputArgs != null) {
+		    writer.write(inputArgs);
+		}
+		writer.newLine();
+		writer.flush();
+    	}
+}
 
 }

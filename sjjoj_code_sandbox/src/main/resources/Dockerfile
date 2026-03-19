@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk
+FROM registry.cn-hangzhou.aliyuncs.com/library/openjdk:8-jdk
 
 RUN apt-get update \
     && apt-get install -y python3 gcc g++ \
